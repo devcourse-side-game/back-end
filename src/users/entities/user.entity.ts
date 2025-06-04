@@ -1,22 +1,38 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+import { Party } from 'src/parties/entities/party.entity';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
+  @ApiProperty({ description: 'user ID', example: 1 })
+  @PrimaryGeneratedColumn({ name: 'id', type: 'integer' })
   id: number;
 
-  @Column({ unique: true, length: 50 })
+  @ApiProperty({ description: 'user name', example: 'user1' })
+  @Column({ nullable: false, unique: true, type: 'varchar', length: 50 })
   username: string;
 
-  @Column({ length: 100 })
+  @ApiProperty({ description: 'user password', example: 'password1' })
+  @Column({ nullable: false, type: 'varchar', length: 20 })
   password: string;
 
-  @Column({ nullable: true, length: 100 })
+  @ApiProperty({ description: 'user email', example: 'user1@gmail.com' })
+  @Column({ nullable: true, type: 'varchar', length: 50 })
   email: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @ApiProperty({ description: 'user profile image', example: 'https://example.com/profile.jpg' })
+  @Column({ type: 'varchar', length: 255, name: 'profile_image' })
+  profileImage: string;
+
+  @ApiProperty({ description: 'The time the user created the party', example: '2023-01-01T00:00:00.000Z' })
+  @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @ApiProperty({ description: 'The time the user updated the party', example: '2023-01-01T00:00:00.000Z' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
   updatedAt: Date;
+
+  /* 관계 */
+  @OneToMany(() => Party, party => party.creator)
+  createdParties: Party[];
 }
