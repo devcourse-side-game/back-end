@@ -12,10 +12,10 @@ export class UserProfileResponseDto {
   email: string;
   
   @ApiProperty({ example: '2025-05-13T11:15:15+09:00', description: '가입일' })
-  created_at: string;
+  createdAt: string;
   
   @ApiProperty({ example: '2025-05-13T11:15:15+09:00', description: '수정일' })
-  updated_at: string;
+  updatedAt: string;
 }
 
 // 사용자 정보 수정 성공 응답 DTO
