@@ -16,7 +16,7 @@ export class User {
 	id: number;
 
 	@ApiProperty({ description: 'user name', example: 'user1' })
-	@Column({ nullable: false, unique: true, type: 'varchar', length: 50 })
+	@Column({ nullable: false, unique: true, type: 'varchar', length: 10 })
 	username: string;
 
 	@ApiProperty({ description: 'user password', example: 'password1' })
@@ -24,7 +24,7 @@ export class User {
 	password: string;
 
 	@ApiProperty({ description: 'user email', example: 'user1@gmail.com' })
-	@Column({ nullable: true, type: 'varchar', length: 50 })
+	@Column({ nullable: true, unique: true, type: 'varchar', length: 50 })
 	email: string;
 
 	@ApiProperty({ description: 'user profile image', example: 'https://example.com/profile.jpg' })
