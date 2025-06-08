@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
@@ -18,12 +18,12 @@ export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
 	@Post('register')
+	@HttpCode(201)
 	@ApiOperation({ summary: '회원가입', description: '새 사용자 계정 생성' })
 	@ApiResponse({ status: 201, description: '회원가입 성공', type: RegisterResponseDto })
 	@ApiResponse({ status: 409, description: '이미 존재하는 사용자명', type: AuthErrorResponseDto })
 	async register(@Body() registerDto: RegisterDto) {
-		// 실제 구현은 아직 하지 않음
-		return { message: '회원가입이 완료되었습니다.' };
+		return await this.authService.register(registerDto);
 	}
 
 	@Post('login')
@@ -31,11 +31,9 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: '로그인 성공', type: LoginResponseDto })
 	@ApiResponse({ status: 401, description: '인증 실패', type: AuthErrorResponseDto })
 	async login(@Body() loginDto: LoginDto) {
-		// 실제 구현은 아직 하지 않음
-		return {
-			message: '로그인 성공',
-			accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-		};
+		const { accessToken } = await this.authService.login(loginDto);
+
+		return { message: '로그인 성공', accessToken };
 	}
 
 	@Post('logout')

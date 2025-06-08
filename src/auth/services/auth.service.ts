@@ -1,13 +1,58 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { User } from 'src/users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { LoginDto, RegisterDto } from '../dto';
 
 @Injectable()
 export class AuthService {
-	constructor(private jwtService: JwtService) {}
+	constructor(
+		private jwtService: JwtService,
+		private userRepository: Repository<User>
+	) {}
 
-	async generateToken(payload: any) {
-		return {
-			accessToken: this.jwtService.sign(payload),
-		};
+	/* 회원가입 */
+	async register(registerDto: RegisterDto) {
+		const { email, password, username } = registerDto;
+
+		const hashedPassword = await bcrypt.hash(password, 10);
+		const user = await this.userRepository.create({
+			username: username,
+			email: email,
+			password: hashedPassword,
+		})
+
+		// 중복 이메일, 유저명이 있다면 DB에러 발생 => 예외 처리 커스텀 필요
+		// 사전 검증 방식으로 전환하는 것을 고려할 수 있음
+		await this.userRepository.save(user);
+
+		return { message: '회원가입이 완료되었습니다.' };
+	}
+
+	/* 로그인 */
+	async login(loginDto: LoginDto) {
+		const { email, password } = loginDto;
+
+		const user = await this.userRepository.findOneBy({ email });
+		if (!user) {
+			throw new Error('User not found');
+		}
+
+		const isPasswordMatched = await bcrypt.compare(password, user.password);
+		if (!isPasswordMatched) {
+			throw new Error('Invalid password');
+		}
+
+		return this.generateToken({ id: user.id, username: user.username, email: user.email });
+	}
+
+	/* 토큰 생성 */
+	async generateToken(payload: { id: number; username: string; email: string }) {
+		const accessToken = this.jwtService.sign(payload, {
+			audience: payload.email,
+		});
+
+		return { accessToken };
 	}
 }
