@@ -8,7 +8,7 @@ export class LoginDto {
 	email: string;
 
 	@ApiProperty({ example: 'password123', description: '사용자 비밀번호' })
-	@MaxLength(20, { message: '비밀번호는 20자를 초과할 수 없습니다.' })
+	@MaxLength(100, { message: '비밀번호는 100자를 초과할 수 없습니다.' })
 	password: string;
 }
 
@@ -19,7 +19,7 @@ export class RegisterDto {
 	email: string;
 
 	@ApiProperty({ example: 'password123', description: '사용자 비밀번호' })
-	@MaxLength(20, { message: '비밀번호는 20자를 초과할 수 없습니다.' })
+	@MaxLength(100, { message: '비밀번호는 100자를 초과할 수 없습니다.' })
 	password: string;
 
 	@ApiProperty({ example: 'user123', description: '사용자 이름' })
