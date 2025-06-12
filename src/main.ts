@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppExceptionFilter } from './common/filters/app-exception.filters';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
@@ -12,6 +13,9 @@ async function bootstrap() {
 
 	// validationPipe 등록
 	app.useGlobalPipes(new ValidationPipe());
+
+	// 전역 예외 필터 등록
+	app.useGlobalFilters(new AppExceptionFilter());
 
 	// CORS 설정
 	app.enableCors({
