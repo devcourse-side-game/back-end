@@ -12,7 +12,7 @@ import { PartiesModule } from './parties/parties.module';
 		ConfigModule.forRoot({
 			isGlobal: true,
 		}), // .env 파일 로드
-		// TypeOrmConfig, // TypeORM 설정
+		TypeOrmConfig, // TypeORM 설정
 		UsersModule,
 		AuthModule,
 		PartiesModule,
