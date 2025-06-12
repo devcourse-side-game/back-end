@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { LoginDto, RegisterDto } from '../dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		private jwtService: JwtService,
+
+		@InjectRepository(User)
 		private userRepository: Repository<User>
 	) {}
 
@@ -36,12 +39,12 @@ export class AuthService {
 
 		const user = await this.userRepository.findOneBy({ email });
 		if (!user) {
-			throw new Error('User not found');
+			throw new UnauthorizedException('인증에 실패했습니다.');
 		}
 
 		const isPasswordMatched = await bcrypt.compare(password, user.password);
 		if (!isPasswordMatched) {
-			throw new Error('Invalid password');
+			throw new UnauthorizedException('인증에 실패했습니다.');
 		}
 
 		return this.generateToken({ id: user.id, username: user.username, email: user.email });
