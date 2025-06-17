@@ -8,16 +8,16 @@ import { AuthModule } from './auth/auth.module';
 import { PartiesModule } from './parties/parties.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }), // .env 파일 로드
-    // TypeOrmConfig, // TypeORM 설정
-    UsersModule,
-    AuthModule,
-    PartiesModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+		}), // .env 파일 로드
+		// TypeOrmConfig, // TypeORM 설정
+		UsersModule,
+		AuthModule,
+		PartiesModule,
+	],
+	controllers: [AppController],
+	providers: [AppService],
 })
 export class AppModule {}
