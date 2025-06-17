@@ -15,7 +15,7 @@ interface SteamAppListResponse {
 
 interface BulkGame {
 	name: string;
-	platforms: 'steam'; // Game entity의 platforms 타입과 일치하도록 수정
+	platforms: 'steam';
 	steamAppId: number;
 	bannerUrl: string;
 	slug: string;
@@ -49,7 +49,7 @@ export class SteamBatchService {
 				.map(
 					(app: SteamApp): BulkGame => ({
 						name: app.name,
-						platforms: 'steam' as const, // platforms를 'steam'으로 설정
+						platforms: 'steam' as const,
 						steamAppId: app.appid,
 						bannerUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${app.appid}/header.jpg`,
 						slug: this.slugify(app.name, app.appid).slice(0, 255),
@@ -62,8 +62,8 @@ export class SteamBatchService {
 
 			for (const chunk of chunkArray(entities, CHUNK_SIZE)) {
 				await this.gameRepository.upsert(chunk, {
-					conflictPaths: ['steamAppId'], // 충돌 필드 지정
-					skipUpdateIfNoValuesChanged: true, // 변경사항이 없으면 업데이트 건너뛰기
+					conflictPaths: ['steamAppId'],
+					skipUpdateIfNoValuesChanged: true,
 				});
 			}
 			this.logger.log(`Steam 게임 ${bulkGames.length}건 upsert 완료`);
@@ -76,11 +76,6 @@ export class SteamBatchService {
 		}
 	}
 
-	/**
-	 * Steam 게임명 → slug
-	 * - 영문·숫자만 남기고 하이픈 처리
-	 * - 결과가 빈 문자열일 경우 `${platform}-${appid}` 로 대체해 중복/빈 값 방지
-	 */
 	private slugify(name: string, appid: number): string {
 		const base = name
 			.toLowerCase()

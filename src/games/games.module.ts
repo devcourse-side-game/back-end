@@ -1,14 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { HttpModule } from '@nestjs/axios'; // 추가
+import { HttpModule } from '@nestjs/axios';
 import { Game } from './entities/game.entity';
 import { SteamBatchService } from './steam-batch.service';
 
 @Module({
-	imports: [
-		TypeOrmModule.forFeature([Game]),
-		HttpModule, // 추가
-	],
+	imports: [TypeOrmModule.forFeature([Game]), HttpModule],
 	providers: [SteamBatchService],
 	exports: [SteamBatchService],
 })

@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../app.module'; // AppModule로 변경!
+import { AppModule } from '../../app.module';
 import { SteamBatchService } from '../steam-batch.service';
 
 async function bootstrap() {
-	const app = await NestFactory.createApplicationContext(AppModule); // AppModule로 변경!
+	const app = await NestFactory.createApplicationContext(AppModule);
 	const steamBatchService = app.get(SteamBatchService);
 	await steamBatchService.fetchAndUpsertSteamGames();
 	await app.close();

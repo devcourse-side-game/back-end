@@ -12,16 +12,16 @@ import { GamesModule } from './games/games.module';
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
-		}), // .env 파일 로드
+		}),
 		TypeOrmModule.forRoot({
-			type: 'mysql', // 또는 사용하는 DB 타입
+			type: 'mysql',
 			host: process.env.DATABASE_HOST,
 			port: Number(process.env.DATABASE_PORT),
 			username: process.env.DATABASE_USER,
 			password: process.env.DATABASE_PASSWORD,
 			database: process.env.DATABASE_NAME,
 			entities: [__dirname + '/**/*.entity{.ts,.js}'],
-			synchronize: false, // 운영환경에서는 false 권장
+			synchronize: false,
 		}),
 		UsersModule,
 		AuthModule,
