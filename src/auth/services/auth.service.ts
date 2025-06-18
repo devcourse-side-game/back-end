@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../users/entities/user.entity';
@@ -48,6 +48,15 @@ export class AuthService {
 		}
 
 		return this.generateToken({ id: user.id, username: user.username, email: user.email });
+	}
+
+	/* 닉네임 중복 확인 */
+	async nicknameCheck(nickname: string) {
+		const user = await this.userRepository.findOneBy({ username: nickname });
+		if (user) {
+			throw new ConflictException('이미 존재하는 닉네임입니다.');
+		}
+		return { message: '사용 가능한 닉네임입니다.' };
 	}
 
 	/* 토큰 생성 */
