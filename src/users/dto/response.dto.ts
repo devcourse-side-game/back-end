@@ -38,12 +38,12 @@ export class DeleteAccountResponseDto {
 
 // 에러 응답 DTO
 export class UsersErrorResponseDto {
-	@ApiProperty({ example: 401 })
+	@ApiProperty({ example: 404 })
 	statusCode: number;
 
-	@ApiProperty({ example: '인증에 실패했습니다.' })
+	@ApiProperty({ example: '사용자를 찾을 수 없습니다.' })
 	message: string;
 
-	@ApiProperty({ example: 'Unauthorized' })
+	@ApiProperty({ example: 'Not Found' })
 	error: string;
 }
