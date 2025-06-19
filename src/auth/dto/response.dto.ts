@@ -18,6 +18,11 @@ export class LogoutResponseDto {
 	message: string;
 }
 
+export class NicknameCheckResponseDto {
+	@ApiProperty({ example: '사용 가능한 닉네임입니다.' })
+	message: string;
+}
+
 export class AuthErrorResponseDto {
 	@ApiProperty({ example: 401 })
 	statusCode: number;

@@ -1,5 +1,5 @@
-import { Body, Controller, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
 	LoginDto,
@@ -8,6 +8,7 @@ import {
 	RegisterResponseDto,
 	LogoutResponseDto,
 	AuthErrorResponseDto,
+	NicknameCheckResponseDto,
 } from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetUser } from '../decorator/get-user.decorator';
@@ -37,13 +38,22 @@ export class AuthController {
 	}
 
 	@Post('logout')
+	@ApiBearerAuth('access-token')
 	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth()
 	@ApiOperation({ summary: '로그아웃', description: '현재 세션 종료' })
 	@ApiResponse({ status: 200, description: '로그아웃 성공', type: LogoutResponseDto })
 	async logout(@GetUser() user: any) {
 		// 클라이언트 측에서 토큰을 삭제하는 방식으로 구현
 		// 서버 측에서는 추가 작업 없이 성공 응답만 반환
 		return { message: '로그아웃 성공' };
+	}
+
+	@Get('nicknameCheck')
+	@ApiOperation({ summary: '닉네임 중복 확인', description: '닉네임 중복 확인' })
+	@ApiResponse({ status: 200, description: '닉네임 중복 확인 성공', type: NicknameCheckResponseDto })
+	@ApiResponse({ status: 409, description: '닉네임 중복', type: AuthErrorResponseDto })
+	@ApiQuery({ name: 'nickname', description: '닉네임', required: true })
+	async nicknameCheck(@Query('nickname') nickname: string) {
+		return await this.authService.nicknameCheck(nickname);
 	}
 }

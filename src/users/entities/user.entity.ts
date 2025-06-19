@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Party } from 'src/parties/entities/party.entity';
+import { Party } from '../../parties/entities/party.entity';
 import {
 	Column,
 	CreateDateColumn,
@@ -20,7 +20,7 @@ export class User {
 	username: string;
 
 	@ApiProperty({ description: 'user password', example: 'password1' })
-	@Column({ nullable: false, type: 'varchar', length: 20 })
+	@Column({ nullable: false, type: 'varchar', length: 100 })
 	password: string;
 
 	@ApiProperty({ description: 'user email', example: 'user1@gmail.com' })
@@ -28,7 +28,7 @@ export class User {
 	email: string;
 
 	@ApiProperty({ description: 'user profile image', example: 'https://example.com/profile.jpg' })
-	@Column({ type: 'varchar', length: 255, name: 'profile_image' })
+	@Column({ nullable: true, type: 'varchar', length: 255, name: 'profile_image' })
 	profileImage: string;
 
 	@ApiProperty({
