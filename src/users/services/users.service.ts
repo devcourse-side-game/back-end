@@ -25,10 +25,24 @@ export class UsersService {
   }
 
   /**
+   * 사용자 프로필 조회
+   */
+  async getProfile(userId: number): Promise<User> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    return user;
+  }
+
+  /**
    * 사용자 정보 업데이트
    */
   async updateProfile(userId: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
     
     // 업데이트할 필드가 있는 경우에만 업데이트
     if (updateUserDto.username) {
@@ -61,6 +75,9 @@ export class UsersService {
    */
   async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<void> {
     const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
     
     // 현재 비밀번호 확인
     const isPasswordValid = await bcrypt.compare(
@@ -84,6 +101,9 @@ export class UsersService {
    */
   async deleteAccount(userId: number): Promise<void> {
     const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
     await this.usersRepository.remove(user);
   }
 }
