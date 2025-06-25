@@ -5,12 +5,14 @@ import {
 	CreateDateColumn,
 	UpdateDateColumn,
 	Index,
+	OneToMany,
 } from 'typeorm';
+import { Party } from '../../parties/entities/party.entity';
 
 @Entity('games')
 @Index('idx_name_platform', ['name', 'platforms'])
 export class Game {
-	@PrimaryGeneratedColumn({ unsigned: true })
+	@PrimaryGeneratedColumn()
 	id: number;
 
 	@Column({ length: 255 })
@@ -37,4 +39,7 @@ export class Game {
 
 	@Column({ length: 255, unique: true })
 	slug: string;
+
+	@OneToMany(() => Party, (party) => party.game)
+	parties: Party[];
 }
