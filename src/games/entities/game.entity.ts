@@ -10,7 +10,7 @@ import {
 import { Party } from '../../parties/entities/party.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-@Entity('games')
+@Entity('Games')
 @Index('idx_name_platform', ['name', 'platforms'])
 export class Game {
 	@ApiProperty({ example: 1, description: '게임 고유 ID' })
