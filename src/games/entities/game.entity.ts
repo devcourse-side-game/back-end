@@ -38,7 +38,12 @@ export class Game {
 	@Column({ type: 'int', unsigned: true, nullable: true, name: 'steam_app_id' })
 	steamAppId?: number;
 
-	@ApiProperty({ example: 'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg', description: '게임 배너 이미지 URL', required: false, nullable: true })
+	@ApiProperty({
+		example: 'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
+		description: '게임 배너 이미지 URL',
+		required: false,
+		nullable: true,
+	})
 	@Column({ length: 255, nullable: true, name: 'banner_url' })
 	bannerUrl?: string;
 
