@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
-import { PartiesController } from './controllers/parties.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PartiesController } from './controllers/parties.controller';
+import { PartiesService } from './services/parties.service';
 import { Party } from './entities/party.entity';
+import { UserGameProfile } from './entities/user-game-profile.entity';
+import { Game } from '../games/entities/game.entity';
+import { User } from '../users/entities/user.entity';
+import { PartyMember } from './entities/party-members.entity';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([Party])],
+	imports: [TypeOrmModule.forFeature([Party, UserGameProfile, Game, User, PartyMember])],
 	controllers: [PartiesController],
-	providers: [], // 서비스는 나중에 추가
-	exports: [],
+	providers: [PartiesService],
+	exports: [PartiesService],
 })
 export class PartiesModule {}
