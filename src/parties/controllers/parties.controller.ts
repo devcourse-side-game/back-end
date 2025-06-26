@@ -27,7 +27,7 @@ import {
 import { Party } from '../entities/party.entity';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
-@ApiTags('Parties')
+@ApiTags('parties')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('parties')
