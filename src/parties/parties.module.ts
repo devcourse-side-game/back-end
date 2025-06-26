@@ -7,11 +7,13 @@ import { UserGameProfile } from './entities/user-game-profile.entity';
 import { Game } from '../games/entities/game.entity';
 import { User } from '../users/entities/user.entity';
 import { PartyMember } from './entities/party-members.entity';
+import { PartyMembersController } from './controllers/party-members.controller';
+import { PartyMembersService } from './services/party-members.service';
 
 @Module({
 	imports: [TypeOrmModule.forFeature([Party, UserGameProfile, Game, User, PartyMember])],
-	controllers: [PartiesController],
-	providers: [PartiesService],
-	exports: [PartiesService],
+	controllers: [PartiesController, PartyMembersController],
+	providers: [PartiesService, PartyMembersService],
+	exports: [PartiesService, PartyMembersService],
 })
 export class PartiesModule {}
