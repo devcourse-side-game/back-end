@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { PartyMember } from '../entities/party-members.entity';
 import { Party } from '../entities/party.entity';
 import { User } from '../../users/entities/user.entity';
+import { AppException } from '../../common/exceptions/app.exception';
+import { ErrorCode } from '../../common/constants/error-codes';
 
 @Injectable()
 export class PartyMembersService {
@@ -18,11 +20,11 @@ export class PartyMembersService {
 
 	async joinParty(partyId: number, userId: number): Promise<void> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR);
 		const exists = await this.partyMemberRepository.findOne({
 			where: { partyId, userId },
 		});
-		if (exists) throw new BadRequestException('이미 참가한 파티입니다.');
+		if (exists) throw new AppException(ErrorCode.VALIDATION_ERROR, '이미 참가한 파티입니다.');
 		const member = this.partyMemberRepository.create({
 			partyId,
 			userId,
