@@ -66,12 +66,16 @@ export class PartiesController {
 
 	@Delete(':id')
 	@ApiOperation({ summary: '파티 삭제' })
-	@ApiOkResponse({ description: '파티가 성공적으로 삭제되었습니다.' })
-	deleteParty(
+	@ApiOkResponse({
+		description: '파티가 성공적으로 삭제되었습니다.',
+		schema: { example: { message: '파티가 성공적으로 삭제되었습니다.' } },
+	})
+	async deleteParty(
 		@Param('id', ParseIntPipe) id: number,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partiesService.deleteParty(id, user.id);
+	): Promise<{ message: string }> {
+		await this.partiesService.deleteParty(id, user.id);
+		return { message: '파티가 성공적으로 삭제되었습니다.' };
 	}
 
 	@Get()
