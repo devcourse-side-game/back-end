@@ -19,7 +19,7 @@ import { JoinPrivatePartyDto } from '../dto/join-private-party.dto';
 @ApiTags('PartyMembers')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('api/parties/:partyId/members')
+@Controller('parties/:partyId/members')
 export class PartyMembersController {
 	constructor(private readonly partyMembersService: PartyMembersService) {}
 
