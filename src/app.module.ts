@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PartiesModule } from './parties/parties.module';
 import { GamesModule } from './games/games.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { GamesModule } from './games/games.module';
 		AuthModule,
 		PartiesModule,
 		GamesModule,
+		LikesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],
