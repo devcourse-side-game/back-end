@@ -1,6 +1,31 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
 
+export class UserGameProfileDto {
+	@ApiProperty({ example: 'player123' })
+	gameUsername: string;
+}
+
+export class PartyMemberDto {
+	@ApiProperty({ example: 1 })
+	id: number; // PartyMembers.id
+
+	@ApiProperty({ example: 2 })
+	userId: number;
+
+	@ApiProperty({ example: '닉네임' })
+	username: string;
+
+	@ApiProperty({ example: true })
+	isLeader: boolean;
+
+	@ApiProperty({ example: '2025-06-27T09:00:00+09:00' })
+	joinedAt: string;
+
+	@ApiProperty({ type: () => UserGameProfileDto })
+	userGameProfile: UserGameProfileDto;
+}
+
 // 기본 파티 정보 DTO (재사용 가능)
 export class PartyDto {
 	@ApiProperty({ example: 1 })
@@ -88,15 +113,13 @@ export class PartyResponseDto {
 
 // 파티원 목록 응답 DTO
 export class MemberListResponseDto {
-	@ApiProperty({
-		type: [MemberDto],
-	})
-	members: MemberDto[];
+	@ApiProperty({ type: [PartyMemberDto] })
+	members: PartyMemberDto[];
 
 	@ApiProperty({ example: 1 })
 	partyId: number;
 
-	@ApiProperty({ example: '로스트아크 발탄 하드 파티 모집' })
+	@ApiProperty({ example: '파티 제목' })
 	partyTitle: string;
 }
 

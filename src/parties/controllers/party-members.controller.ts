@@ -12,9 +12,10 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
-import { PartyMember } from '../entities/party-members.entity';
+// import { PartyMember } from '../entities/party-members.entity';
 import { PartyMembersService } from '../services/party-members.service';
 import { JoinPrivatePartyDto } from '../dto/join-private-party.dto';
+import { MemberListResponseDto } from '../dto/response.dto';
 
 @ApiTags('PartyMembers')
 @ApiBearerAuth()
@@ -57,7 +58,9 @@ export class PartyMembersController {
 	@Get()
 	@ApiOperation({ summary: '파티 멤버 목록 조회' })
 	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.' })
-	getPartyMembers(@Param('partyId', ParseIntPipe) partyId: number): Promise<PartyMember[]> {
+	getPartyMembers(
+		@Param('partyId', ParseIntPipe) partyId: number,
+	): Promise<MemberListResponseDto> {
 		return this.partyMembersService.getPartyMembers(partyId);
 	}
 

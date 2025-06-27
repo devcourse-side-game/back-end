@@ -6,6 +6,8 @@ import { Party } from '../entities/party.entity';
 import { User } from '../../users/entities/user.entity';
 import { AppException } from '../../common/exceptions/app.exception';
 import { ErrorCode } from '../../common/constants/error-codes';
+import { UserGameProfile } from '../entities/user-game-profile.entity';
+import { MemberListResponseDto, PartyMemberDto } from '../dto/response.dto';
 
 @Injectable()
 export class PartyMembersService {
@@ -16,15 +18,32 @@ export class PartyMembersService {
 		private readonly partyRepository: Repository<Party>,
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
+		@InjectRepository(UserGameProfile)
+		private readonly userGameProfileRepository: Repository<UserGameProfile>,
 	) {}
 
 	async joinParty(partyId: number, userId: number): Promise<void> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR);
+		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR, '파티가 존재하지 않습니다.');
+
+		const userGameProfile = await this.userGameProfileRepository.findOne({
+			where: {
+				user: { id: userId },
+				game: { id: party.gameId },
+			},
+		});
+		if (!userGameProfile) {
+			throw new AppException(
+				ErrorCode.VALIDATION_ERROR,
+				'해당 게임의 프로필이 존재하지 않습니다.',
+			);
+		}
+
 		const exists = await this.partyMemberRepository.findOne({
 			where: { partyId, userId },
 		});
 		if (exists) throw new AppException(ErrorCode.VALIDATION_ERROR, '이미 참가한 파티입니다.');
+
 		const member = this.partyMemberRepository.create({
 			partyId,
 			userId,
@@ -41,11 +60,41 @@ export class PartyMembersService {
 		await this.partyMemberRepository.remove(member);
 	}
 
-	async getPartyMembers(partyId: number): Promise<PartyMember[]> {
-		return this.partyMemberRepository.find({
+	async getPartyMembers(partyId: number): Promise<MemberListResponseDto> {
+		const members = await this.partyMemberRepository.find({
 			where: { partyId },
 			relations: ['user'],
 		});
+
+		const party = await this.partyRepository.findOne({ where: { id: partyId } });
+		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+
+		const memberDtos: PartyMemberDto[] = await Promise.all(
+			members.map(async (member) => {
+				const userGameProfile = await this.userGameProfileRepository.findOne({
+					where: {
+						user: { id: member.userId },
+						game: { id: party.gameId },
+					},
+				});
+				return {
+					id: member.id,
+					userId: member.userId,
+					username: member.user?.username || '',
+					isLeader: member.isLeader,
+					joinedAt: member.joinedAt?.toISOString(),
+					userGameProfile: userGameProfile
+						? { gameUsername: userGameProfile.game_username }
+						: { gameUsername: '' },
+				};
+			}),
+		);
+
+		return {
+			members: memberDtos,
+			partyId: party.id,
+			partyTitle: party.title,
+		};
 	}
 
 	async joinPrivateParty(partyId: number, userId: number, accessCode: string): Promise<void> {
