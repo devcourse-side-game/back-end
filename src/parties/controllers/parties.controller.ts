@@ -25,6 +25,7 @@ import {
 	ApiQuery,
 } from '@nestjs/swagger';
 import { Party } from '../entities/party.entity';
+import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
 @ApiTags('parties')
@@ -47,8 +48,8 @@ export class PartiesController {
 
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
-	@ApiOkResponse({ description: '파티 정보를 반환합니다.', type: Party })
-	findPartyById(@Param('id', ParseIntPipe) id: number): Promise<Party> {
+	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
+	async findPartyById(@Param('id', ParseIntPipe) id: number): Promise<PartyWithMembersDto> {
 		return this.partiesService.findPartyById(id);
 	}
 

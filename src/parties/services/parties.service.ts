@@ -93,15 +93,71 @@ export class PartiesService {
 	}
 
 	/**
-	 * 파티 ID로 파티 조회
+	 * 파티 ID로 파티 조회 (DTO 변환)
 	 */
-	async findPartyById(id: number): Promise<Party> {
+	async findPartyById(
+		id: number,
+	): Promise<import('../dto/party-with-members.dto').PartyWithMembersDto> {
 		const party = await this.partyRepository.findOne({
 			where: { id },
 			relations: ['creator', 'game', 'members', 'members.user'],
 		});
 		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
-		return party;
+		return this.toPartyWithMembersDto(party);
+	}
+
+	/**
+	 * Party 엔티티를 PartyWithMembersDto로 변환 (password 등 민감 정보 제거)
+	 */
+	toPartyWithMembersDto(
+		party: Party,
+	): import('../dto/party-with-members.dto').PartyWithMembersDto {
+		const {
+			id,
+			title,
+			gameId,
+			creatorId,
+			purposeTag,
+			maxParticipants,
+			description,
+			isPrivate,
+			accessCode,
+			isCompleted,
+			createdAt,
+			updatedAt,
+			creator,
+			members,
+		} = party;
+		return {
+			id,
+			title,
+			gameId,
+			creatorId,
+			purposeTag,
+			maxParticipants,
+			description,
+			isPrivate,
+			accessCode,
+			isCompleted,
+			createdAt,
+			updatedAt,
+			creator: creator
+				? {
+						id: creator.id,
+						username: creator.username,
+						email: creator.email,
+						profileImage: creator.profileImage,
+					}
+				: { id: 0, username: '', email: '', profileImage: '' },
+			members: (members || []).map((m) => ({
+				id: m.id,
+				userId: m.userId,
+				username: m.user?.username ?? '',
+				isLeader: m.isLeader,
+				joinedAt: m.joinedAt,
+				leftAt: m.leftAt,
+			})),
+		};
 	}
 
 	/**
@@ -127,7 +183,9 @@ export class PartiesService {
 	 * 파티 삭제
 	 */
 	async deleteParty(partyId: number, userId: number): Promise<void> {
-		const party = await this.findPartyById(partyId);
+		// Party 엔티티로 조회해야 remove가 정상 동작
+		const party = await this.partyRepository.findOne({ where: { id: partyId } });
+		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
 		if (party.creatorId !== userId) {
 			throw new ForbiddenException('파티 생성자만 삭제할 수 있습니다.');
 		}
