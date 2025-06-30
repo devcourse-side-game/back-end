@@ -14,7 +14,7 @@ export enum ErrorCode {
     PARTY_NOT_FOUND = 'p-001', // 파티를 찾을 수 없음
     PARTY_ALREADY_JOINED = 'p-002', // 이미 참가한 파티
     PARTY_MAX_PARTICIPANTS = 'p-003', // 최대 인원 초과
-    PARTY_INVALID_ACCESS_CODE = 'p-004', // 잘못된 접근 코드
+    PARTY_INVALID_ACCESS_CODE = 'p-004', // 잘못된 접근 코드 또는 비공개 파티 접근 오류
     PARTY_LEADER_CANNOT_LEAVE = 'p-005', // 파티장은 탈퇴할 수 없음
     PARTY_MEMBER_NOT_FOUND = 'p-006', // 파티 멤버를 찾을 수 없음
     PARTY_NOT_LEADER = 'p-007', // 파티장이 아님
@@ -82,8 +82,8 @@ export enum ErrorCode {
     },
     [ErrorCode.PARTY_INVALID_ACCESS_CODE]: {
       statusCode: 400,
-      message: '잘못된 접근 코드입니다.',
-      detail: '올바른 접근 코드를 입력해주세요.'
+      message: '접근 코드가 필요하거나 잘못되었습니다.',
+      detail: '비공개 파티는 올바른 접근 코드가 필요합니다.'
     },
     [ErrorCode.PARTY_LEADER_CANNOT_LEAVE]: {
       statusCode: 403,

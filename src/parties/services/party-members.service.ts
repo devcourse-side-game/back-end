@@ -26,6 +26,11 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
+		// 비공개 파티는 join-private 엔드포인트를 사용해야 함
+		if (party.isPrivate) {
+			throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
+		}
+
 		// 현재 멤버 수 체크
 		const currentCount = await this.partyMemberRepository.count({ where: { partyId } });
 		if (currentCount >= party.maxParticipants) {

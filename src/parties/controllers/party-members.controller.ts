@@ -39,14 +39,14 @@ export class PartyMembersController {
 		schema: { example: { message: 'user1님이 파티에 참가했습니다.' } },
 	})
 	@ApiBadRequestResponse({
-		description: '이미 참가한 파티이거나 최대 인원을 초과했습니다.',
+		description: '이미 참가한 파티이거나 최대 인원을 초과했거나 비공개 파티입니다.',
 		schema: {
 			example: {
 				success: false,
 				statusCode: 400,
-				errorCode: 'p-002',
-				message: '이미 참가한 파티입니다.',
-				detail: '한 번에 하나의 파티에만 참가할 수 있습니다.',
+				errorCode: 'p-004',
+				message: '접근 코드가 필요하거나 잘못되었습니다.',
+				detail: '비공개 파티는 올바른 접근 코드가 필요합니다.',
 				timestamp: '2025-06-30T12:00:00.000Z',
 				path: '/parties/1/members/join',
 			},
@@ -79,17 +79,41 @@ export class PartyMembersController {
 	@ApiBadRequestResponse({
 		description: '잘못된 접근 코드이거나 이미 참가한 파티입니다.',
 		schema: {
-			example: { statusCode: 400, message: '잘못된 접근 코드입니다.', error: 'Bad Request' },
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'p-004',
+				message: '접근 코드가 필요하거나 잘못되었습니다.',
+				detail: '비공개 파티는 올바른 접근 코드가 필요합니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/members/join-private',
+			},
 		},
 	})
 	@ApiUnauthorizedResponse({
 		description: '인증이 필요합니다.',
-		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/members/join-private',
+			},
+		},
 	})
 	@ApiNotFoundResponse({
 		description: '파티를 찾을 수 없습니다.',
 		schema: {
-			example: { statusCode: 404, message: '파티를 찾을 수 없습니다.', error: 'Not Found' },
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/members/join-private',
+			},
 		},
 	})
 	async joinPrivateParty(
