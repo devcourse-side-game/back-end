@@ -26,17 +26,30 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR, '파티가 존재하지 않습니다.');
 
-		const userGameProfile = await this.userGameProfileRepository.findOne({
+		let userGameProfile = await this.userGameProfileRepository.findOne({
 			where: {
 				user: { id: userId },
 				game: { id: party.gameId },
 			},
 		});
 		if (!userGameProfile) {
-			throw new AppException(
-				ErrorCode.VALIDATION_ERROR,
-				'해당 게임의 프로필이 존재하지 않습니다.',
-			);
+			// 유저 정보 조회
+			const user = await this.userRepository.findOne({ where: { id: userId } });
+			if (!user)
+				throw new AppException(ErrorCode.VALIDATION_ERROR, '유저가 존재하지 않습니다.');
+			// 게임 정보 조회
+			const game = await this.partyRepository.manager
+				.getRepository('Game')
+				.findOne({ where: { id: party.gameId } });
+			if (!game)
+				throw new AppException(ErrorCode.VALIDATION_ERROR, '게임이 존재하지 않습니다.');
+			// UserGameProfile 자동 생성 (username 사용)
+			userGameProfile = this.userGameProfileRepository.create({
+				user,
+				game,
+				game_username: user.username,
+			});
+			await this.userGameProfileRepository.save(userGameProfile);
 		}
 
 		const exists = await this.partyMemberRepository.findOne({
