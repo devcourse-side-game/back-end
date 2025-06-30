@@ -19,7 +19,6 @@ import {
 	LikeAlreadyExistsResponseDto,
 	BatchLikeStatusResponseDto,
 } from '../dto/like-response.dto';
-import { Like } from 'typeorm';
 
 @ApiTags('likes')
 @Controller('api/users')
