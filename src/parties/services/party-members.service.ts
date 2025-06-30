@@ -22,7 +22,7 @@ export class PartyMembersService {
 		private readonly userGameProfileRepository: Repository<UserGameProfile>,
 	) {}
 
-	async joinParty(partyId: number, userId: number): Promise<void> {
+	async joinParty(partyId: number, userId: number): Promise<{ username: string }> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR, '파티가 존재하지 않습니다.');
 
@@ -50,14 +50,18 @@ export class PartyMembersService {
 			isLeader: false,
 		});
 		await this.partyMemberRepository.save(member);
+		const user = await this.userRepository.findOne({ where: { id: userId } });
+		return { username: user?.username || '' };
 	}
 
-	async leaveParty(partyId: number, userId: number): Promise<void> {
+	async leaveParty(partyId: number, userId: number): Promise<{ username: string }> {
 		const member = await this.partyMemberRepository.findOne({
 			where: { partyId, userId },
 		});
 		if (!member) throw new NotFoundException('파티에 참가하지 않았습니다.');
 		await this.partyMemberRepository.remove(member);
+		const user = await this.userRepository.findOne({ where: { id: userId } });
+		return { username: user?.username || '' };
 	}
 
 	async getPartyMembers(partyId: number): Promise<MemberListResponseDto> {
@@ -97,7 +101,11 @@ export class PartyMembersService {
 		};
 	}
 
-	async joinPrivateParty(partyId: number, userId: number, accessCode: string): Promise<void> {
+	async joinPrivateParty(
+		partyId: number,
+		userId: number,
+		accessCode: string,
+	): Promise<{ username: string }> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
 		if (!party.isPrivate) throw new BadRequestException('비공개 파티가 아닙니다.');
@@ -113,9 +121,15 @@ export class PartyMembersService {
 			isLeader: false,
 		});
 		await this.partyMemberRepository.save(member);
+		const user = await this.userRepository.findOne({ where: { id: userId } });
+		return { username: user?.username || '' };
 	}
 
-	async kickMember(partyId: number, leaderId: number, userId: number): Promise<void> {
+	async kickMember(
+		partyId: number,
+		leaderId: number,
+		userId: number,
+	): Promise<{ username: string }> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
 		const leader = await this.partyMemberRepository.findOne({
@@ -128,9 +142,15 @@ export class PartyMembersService {
 		});
 		if (!member) throw new NotFoundException('해당 파티원을 찾을 수 없습니다.');
 		await this.partyMemberRepository.remove(member);
+		const user = await this.userRepository.findOne({ where: { id: userId } });
+		return { username: user?.username || '' };
 	}
 
-	async changeLeader(partyId: number, leaderId: number, newLeaderId: number): Promise<void> {
+	async changeLeader(
+		partyId: number,
+		leaderId: number,
+		newLeaderId: number,
+	): Promise<{ username: string }> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
 		const leader = await this.partyMemberRepository.findOne({
@@ -145,5 +165,7 @@ export class PartyMembersService {
 		leader.isLeader = false;
 		newLeader.isLeader = true;
 		await this.partyMemberRepository.save([leader, newLeader]);
+		const user = await this.userRepository.findOne({ where: { id: newLeaderId } });
+		return { username: user?.username || '' };
 	}
 }

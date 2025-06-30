@@ -26,33 +26,49 @@ export class PartyMembersController {
 
 	@Post('/join')
 	@ApiOperation({ summary: '파티 참가' })
-	@ApiOkResponse({ description: '파티에 참가했습니다.' })
-	joinParty(
+	@ApiOkResponse({
+		description: '파티에 참가했습니다.',
+		schema: { example: { message: 'user1님이 파티에 참가했습니다.' } },
+	})
+	async joinParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partyMembersService.joinParty(partyId, user.id);
+	): Promise<{ message: string }> {
+		const { username } = await this.partyMembersService.joinParty(partyId, user.id);
+		return { message: `${username}님이 파티에 참가했습니다.` };
 	}
 
 	@Post('/join-private')
 	@ApiOperation({ summary: '비공개 파티 참가' })
-	@ApiOkResponse({ description: '비공개 파티에 참가했습니다.' })
-	joinPrivateParty(
+	@ApiOkResponse({
+		description: '비공개 파티에 참가했습니다.',
+		schema: { example: { message: 'user1님이 비공개 파티에 참가했습니다.' } },
+	})
+	async joinPrivateParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@Body() dto: JoinPrivatePartyDto,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partyMembersService.joinPrivateParty(partyId, user.id, dto.accessCode);
+	): Promise<{ message: string }> {
+		const { username } = await this.partyMembersService.joinPrivateParty(
+			partyId,
+			user.id,
+			dto.accessCode,
+		);
+		return { message: `${username}님이 비공개 파티에 참가했습니다.` };
 	}
 
 	@Post('/leave')
 	@ApiOperation({ summary: '파티 탈퇴' })
-	@ApiOkResponse({ description: '파티에서 탈퇴했습니다.' })
-	leaveParty(
+	@ApiOkResponse({
+		description: '파티에서 탈퇴했습니다.',
+		schema: { example: { message: 'user1님이 파티에서 탈퇴했습니다.' } },
+	})
+	async leaveParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partyMembersService.leaveParty(partyId, user.id);
+	): Promise<{ message: string }> {
+		const { username } = await this.partyMembersService.leaveParty(partyId, user.id);
+		return { message: `${username}님이 파티에서 탈퇴했습니다.` };
 	}
 
 	@Get()
@@ -66,23 +82,35 @@ export class PartyMembersController {
 
 	@Delete('/:userId')
 	@ApiOperation({ summary: '파티원 강퇴 (파티장만)' })
-	@ApiOkResponse({ description: '파티원을 강퇴했습니다.' })
-	kickMember(
+	@ApiOkResponse({
+		description: '파티원을 강퇴했습니다.',
+		schema: { example: { message: 'user2님을 강퇴했습니다.' } },
+	})
+	async kickMember(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@Param('userId', ParseIntPipe) userId: number,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partyMembersService.kickMember(partyId, user.id, userId);
+	): Promise<{ message: string }> {
+		const { username } = await this.partyMembersService.kickMember(partyId, user.id, userId);
+		return { message: `${username}님을 강퇴했습니다.` };
 	}
 
 	@Put('/leader/:userId')
 	@ApiOperation({ summary: '파티장 권한 이양 (파티장만)' })
-	@ApiOkResponse({ description: '파티장을 변경했습니다.' })
-	changeLeader(
+	@ApiOkResponse({
+		description: '파티장을 변경했습니다.',
+		schema: { example: { message: 'user2님이 파티장으로 변경되었습니다.' } },
+	})
+	async changeLeader(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@Param('userId', ParseIntPipe) newLeaderId: number,
 		@GetUser() user: { id: number },
-	): Promise<void> {
-		return this.partyMembersService.changeLeader(partyId, user.id, newLeaderId);
+	): Promise<{ message: string }> {
+		const { username } = await this.partyMembersService.changeLeader(
+			partyId,
+			user.id,
+			newLeaderId,
+		);
+		return { message: `${username}님이 파티장으로 변경되었습니다.` };
 	}
 }
