@@ -1,9 +1,6 @@
-import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-	ForbiddenException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppException } from '../../common/exceptions/app.exception';
+import { ErrorCode } from '../../common/constants/error-codes';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Party } from '../entities/party.entity';
@@ -40,10 +37,10 @@ export class PartiesService {
 
 		try {
 			const game = await queryRunner.manager.findOneBy(Game, { id: dto.gameId });
-			if (!game) throw new NotFoundException('존재하지 않는 게임입니다.');
+			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
 
 			const creator = await queryRunner.manager.findOneBy(User, { id: creatorId });
-			if (!creator) throw new NotFoundException('존재하지 않는 사용자입니다.');
+			if (!creator) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
 			let userGameProfile = await queryRunner.manager.findOne(UserGameProfile, {
 				where: { user: { id: creatorId }, game: { id: dto.gameId } },
@@ -58,7 +55,7 @@ export class PartiesService {
 			}
 
 			if (dto.isPrivate && !dto.accessCode) {
-				throw new BadRequestException('비공개 파티는 참여 코드가 필요합니다.');
+				throw new AppException(ErrorCode.VALIDATION_ERROR);
 			}
 
 			const party = queryRunner.manager.create(Party, {
@@ -85,8 +82,8 @@ export class PartiesService {
 			return newParty;
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
-			if (error instanceof Error) throw error;
-			throw new BadRequestException('파티 생성 중 알 수 없는 오류가 발생했습니다.');
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
 		} finally {
 			await queryRunner.release();
 		}
@@ -102,7 +99,7 @@ export class PartiesService {
 			where: { id },
 			relations: ['creator', 'game', 'members', 'members.user'],
 		});
-		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 		return this.toPartyWithMembersDto(party);
 	}
 
@@ -166,7 +163,7 @@ export class PartiesService {
 	async updateParty(partyId: number, dto: UpdatePartyDto, userId: number): Promise<Party> {
 		const party = await this.findPartyById(partyId);
 		if (party.creatorId !== userId) {
-			throw new ForbiddenException('파티 생성자만 수정할 수 있습니다.');
+			throw new AppException(ErrorCode.PARTY_NOT_CREATOR);
 		}
 		Object.assign(party, {
 			title: dto.title ?? party.title,
@@ -185,9 +182,9 @@ export class PartiesService {
 	async deleteParty(partyId: number, userId: number): Promise<void> {
 		// Party 엔티티로 조회해야 remove가 정상 동작
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 		if (party.creatorId !== userId) {
-			throw new ForbiddenException('파티 생성자만 삭제할 수 있습니다.');
+			throw new AppException(ErrorCode.PARTY_NOT_CREATOR);
 		}
 		await this.partyRepository.remove(party);
 	}
@@ -257,14 +254,14 @@ export class PartiesService {
 
 	async joinParty(partyId: number, userId: number): Promise<void> {
 		const exists = await this.partyMemberRepository.findOne({ where: { partyId, userId } });
-		if (exists) throw new BadRequestException('이미 참가한 파티입니다.');
+		if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
 		const member = this.partyMemberRepository.create({ partyId, userId, isLeader: false });
 		await this.partyMemberRepository.save(member);
 	}
 
 	async leaveParty(partyId: number, userId: number): Promise<void> {
 		const member = await this.partyMemberRepository.findOne({ where: { partyId, userId } });
-		if (!member) throw new NotFoundException('파티에 참가하지 않았습니다.');
+		if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
 		await this.partyMemberRepository.remove(member);
 	}
 
@@ -280,12 +277,12 @@ export class PartiesService {
 	 */
 	async completeParty(partyId: number, userId: number): Promise<void> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 		if (party.creatorId !== userId) {
-			throw new ForbiddenException('파티 생성자만 완료 처리할 수 있습니다.');
+			throw new AppException(ErrorCode.PARTY_NOT_CREATOR);
 		}
 		if (party.isCompleted) {
-			throw new BadRequestException('이미 완료된 파티입니다.');
+			throw new AppException(ErrorCode.PARTY_ALREADY_COMPLETED);
 		}
 		party.isCompleted = true;
 		await this.partyRepository.save(party);

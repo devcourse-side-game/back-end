@@ -10,6 +10,19 @@ export enum ErrorCode {
     USER_NOT_FOUND = 'a-001', // 존재하지 않는 아이디
     INVALID_PASSWORD = 'a-002', // 비밀번호 불일치
     
+    // 파티 관련 오류 (p-xxx)
+    PARTY_NOT_FOUND = 'p-001', // 파티를 찾을 수 없음
+    PARTY_ALREADY_JOINED = 'p-002', // 이미 참가한 파티
+    PARTY_MAX_PARTICIPANTS = 'p-003', // 최대 인원 초과
+    PARTY_INVALID_ACCESS_CODE = 'p-004', // 잘못된 접근 코드
+    PARTY_LEADER_CANNOT_LEAVE = 'p-005', // 파티장은 탈퇴할 수 없음
+    PARTY_MEMBER_NOT_FOUND = 'p-006', // 파티 멤버를 찾을 수 없음
+    PARTY_NOT_LEADER = 'p-007', // 파티장이 아님
+    PARTY_SELF_ACTION_NOT_ALLOWED = 'p-008', // 자기 자신에 대한 작업 불가
+    PARTY_ALREADY_COMPLETED = 'p-009', // 이미 완료된 파티
+    PARTY_NOT_CREATOR = 'p-010', // 파티 생성자가 아님
+    GAME_NOT_FOUND = 'p-011', // 게임을 찾을 수 없음
+    
     // 일반 오류 (g-xxx)
     VALIDATION_ERROR = 'g-001',
     DATABASE_ERROR = 'g-002',
@@ -49,6 +62,63 @@ export enum ErrorCode {
       statusCode: 400,
       message: '비밀번호가 일치하지 않습니다.',
       detail: '비밀번호와 비밀번호 확인이 일치하지 않습니다.'
+    },
+    
+    // 파티 관련 오류
+    [ErrorCode.PARTY_NOT_FOUND]: {
+      statusCode: 404,
+      message: '파티를 찾을 수 없습니다.',
+      detail: '존재하지 않는 파티입니다.'
+    },
+    [ErrorCode.PARTY_ALREADY_JOINED]: {
+      statusCode: 409,
+      message: '이미 참가한 파티입니다.',
+      detail: '한 번에 하나의 파티에만 참가할 수 있습니다.'
+    },
+    [ErrorCode.PARTY_MAX_PARTICIPANTS]: {
+      statusCode: 400,
+      message: '파티 최대 인원을 초과했습니다.',
+      detail: '파티에 더 이상 참가할 수 없습니다.'
+    },
+    [ErrorCode.PARTY_INVALID_ACCESS_CODE]: {
+      statusCode: 400,
+      message: '잘못된 접근 코드입니다.',
+      detail: '올바른 접근 코드를 입력해주세요.'
+    },
+    [ErrorCode.PARTY_LEADER_CANNOT_LEAVE]: {
+      statusCode: 403,
+      message: '파티장은 파티를 떠날 수 없습니다.',
+      detail: '파티장을 다른 멤버에게 위임한 후 떠나주세요.'
+    },
+    [ErrorCode.PARTY_MEMBER_NOT_FOUND]: {
+      statusCode: 404,
+      message: '파티 멤버를 찾을 수 없습니다.',
+      detail: '해당 사용자는 이 파티의 멤버가 아닙니다.'
+    },
+    [ErrorCode.PARTY_NOT_LEADER]: {
+      statusCode: 403,
+      message: '파티장만 수행할 수 있는 작업입니다.',
+      detail: '파티장 권한이 필요합니다.'
+    },
+    [ErrorCode.PARTY_SELF_ACTION_NOT_ALLOWED]: {
+      statusCode: 400,
+      message: '자기 자신에 대한 작업은 수행할 수 없습니다.',
+      detail: '다른 멤버를 선택해주세요.'
+    },
+    [ErrorCode.PARTY_ALREADY_COMPLETED]: {
+      statusCode: 400,
+      message: '이미 완료된 파티입니다.',
+      detail: '완료된 파티는 더 이상 수정할 수 없습니다.'
+    },
+    [ErrorCode.PARTY_NOT_CREATOR]: {
+      statusCode: 403,
+      message: '파티 생성자만 수행할 수 있는 작업입니다.',
+      detail: '파티 생성자 권한이 필요합니다.'
+    },
+    [ErrorCode.GAME_NOT_FOUND]: {
+      statusCode: 404,
+      message: '게임을 찾을 수 없습니다.',
+      detail: '존재하지 않는 게임입니다.'
     },
     
     // 일반 오류

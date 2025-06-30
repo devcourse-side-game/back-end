@@ -24,6 +24,10 @@ import {
 	ApiOkResponse,
 	ApiBearerAuth,
 	ApiQuery,
+	ApiBadRequestResponse,
+	ApiUnauthorizedResponse,
+	ApiForbiddenResponse,
+	ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { Party } from '../entities/party.entity';
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
@@ -39,6 +43,46 @@ export class PartiesController {
 	@Post()
 	@ApiOperation({ summary: '파티 생성' })
 	@ApiCreatedResponse({ description: '파티가 성공적으로 생성되었습니다.', type: Party })
+	@ApiBadRequestResponse({
+		description: '잘못된 요청 데이터입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'g-001',
+				message: '입력 데이터가 유효하지 않습니다.',
+				detail: '비공개 파티는 참여 코드가 필요합니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '존재하지 않는 게임입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-011',
+				message: '게임을 찾을 수 없습니다.',
+				detail: '존재하지 않는 게임입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
+	})
 	@UsePipes(new ValidationPipe({ transform: true }))
 	createParty(
 		@Body() createPartyDto: CreatePartyDto,
@@ -50,6 +94,32 @@ export class PartiesController {
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
 	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
 	async findPartyById(@Param('id', ParseIntPipe) id: number): Promise<PartyWithMembersDto> {
 		return this.partiesService.findPartyById(id);
 	}
@@ -139,6 +209,60 @@ export class PartiesController {
 	@ApiOkResponse({
 		description: '파티가 완료 처리되었습니다.',
 		schema: { example: { message: '파티가 완료 처리되었습니다.' } },
+	})
+	@ApiBadRequestResponse({
+		description: '이미 완료된 파티입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'p-009',
+				message: '이미 완료된 파티입니다.',
+				detail: '완료된 파티는 더 이상 수정할 수 없습니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiForbiddenResponse({
+		description: '파티 생성자만 완료 처리할 수 있습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 403,
+				errorCode: 'p-010',
+				message: '파티 생성자만 수행할 수 있는 작업입니다.',
+				detail: '파티 생성자 권한이 필요합니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
 	})
 	async completeParty(
 		@Param('id', ParseIntPipe) id: number,

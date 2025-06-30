@@ -10,9 +10,17 @@ import {
 	Put,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+	ApiTags,
+	ApiOperation,
+	ApiOkResponse,
+	ApiBearerAuth,
+	ApiBadRequestResponse,
+	ApiUnauthorizedResponse,
+	ApiForbiddenResponse,
+	ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
-// import { PartyMember } from '../entities/party-members.entity';
 import { PartyMembersService } from '../services/party-members.service';
 import { JoinPrivatePartyDto } from '../dto/join-private-party.dto';
 import { MemberListResponseDto } from '../dto/response.dto';
@@ -30,6 +38,30 @@ export class PartyMembersController {
 		description: '파티에 참가했습니다.',
 		schema: { example: { message: 'user1님이 파티에 참가했습니다.' } },
 	})
+	@ApiBadRequestResponse({
+		description: '이미 참가한 파티이거나 최대 인원을 초과했습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'p-002',
+				message: '이미 참가한 파티입니다.',
+				detail: '한 번에 하나의 파티에만 참가할 수 있습니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/members/join',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: { statusCode: 404, message: '파티를 찾을 수 없습니다.', error: 'Not Found' },
+		},
+	})
 	async joinParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
@@ -43,6 +75,22 @@ export class PartyMembersController {
 	@ApiOkResponse({
 		description: '비공개 파티에 참가했습니다.',
 		schema: { example: { message: 'user1님이 비공개 파티에 참가했습니다.' } },
+	})
+	@ApiBadRequestResponse({
+		description: '잘못된 접근 코드이거나 이미 참가한 파티입니다.',
+		schema: {
+			example: { statusCode: 400, message: '잘못된 접근 코드입니다.', error: 'Bad Request' },
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: { statusCode: 404, message: '파티를 찾을 수 없습니다.', error: 'Not Found' },
+		},
 	})
 	async joinPrivateParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
@@ -63,6 +111,30 @@ export class PartyMembersController {
 		description: '파티에서 탈퇴했습니다.',
 		schema: { example: { message: 'user1님이 파티에서 탈퇴했습니다.' } },
 	})
+	@ApiBadRequestResponse({
+		description: '파티장은 탈퇴할 수 없습니다.',
+		schema: {
+			example: {
+				statusCode: 400,
+				message: '파티장은 탈퇴할 수 없습니다.',
+				error: 'Bad Request',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiNotFoundResponse({
+		description: '파티에 참가하지 않았습니다.',
+		schema: {
+			example: {
+				statusCode: 404,
+				message: '파티에 참가하지 않았습니다.',
+				error: 'Not Found',
+			},
+		},
+	})
 	async leaveParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
@@ -74,6 +146,16 @@ export class PartyMembersController {
 	@Get()
 	@ApiOperation({ summary: '파티 멤버 목록 조회' })
 	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: { statusCode: 404, message: '파티를 찾을 수 없습니다.', error: 'Not Found' },
+		},
+	})
 	getPartyMembers(
 		@Param('partyId', ParseIntPipe) partyId: number,
 	): Promise<MemberListResponseDto> {
@@ -85,6 +167,40 @@ export class PartyMembersController {
 	@ApiOkResponse({
 		description: '파티원을 강퇴했습니다.',
 		schema: { example: { message: 'user2님을 강퇴했습니다.' } },
+	})
+	@ApiBadRequestResponse({
+		description: '자기 자신을 강퇴할 수 없습니다.',
+		schema: {
+			example: {
+				statusCode: 400,
+				message: '자기 자신을 강퇴할 수 없습니다.',
+				error: 'Bad Request',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiForbiddenResponse({
+		description: '파티장만 강퇴할 수 있습니다.',
+		schema: {
+			example: {
+				statusCode: 403,
+				message: '파티장만 강퇴할 수 있습니다.',
+				error: 'Forbidden',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티나 멤버를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				statusCode: 404,
+				message: '해당 멤버를 찾을 수 없습니다.',
+				error: 'Not Found',
+			},
+		},
 	})
 	async kickMember(
 		@Param('partyId', ParseIntPipe) partyId: number,
@@ -100,6 +216,40 @@ export class PartyMembersController {
 	@ApiOkResponse({
 		description: '파티장을 변경했습니다.',
 		schema: { example: { message: 'user2님이 파티장으로 변경되었습니다.' } },
+	})
+	@ApiBadRequestResponse({
+		description: '자기 자신에게 권한을 이양할 수 없습니다.',
+		schema: {
+			example: {
+				statusCode: 400,
+				message: '자기 자신에게 권한을 이양할 수 없습니다.',
+				error: 'Bad Request',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: { example: { statusCode: 401, message: 'Unauthorized', error: 'Unauthorized' } },
+	})
+	@ApiForbiddenResponse({
+		description: '파티장만 권한을 이양할 수 있습니다.',
+		schema: {
+			example: {
+				statusCode: 403,
+				message: '파티장만 권한을 이양할 수 있습니다.',
+				error: 'Forbidden',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티나 멤버를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				statusCode: 404,
+				message: '해당 멤버를 찾을 수 없습니다.',
+				error: 'Not Found',
+			},
+		},
 	})
 	async changeLeader(
 		@Param('partyId', ParseIntPipe) partyId: number,
