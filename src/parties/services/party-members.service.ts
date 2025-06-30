@@ -26,6 +26,15 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.VALIDATION_ERROR, '파티가 존재하지 않습니다.');
 
+		// 현재 멤버 수 체크
+		const currentCount = await this.partyMemberRepository.count({ where: { partyId } });
+		if (currentCount >= party.maxParticipants) {
+			throw new AppException(
+				ErrorCode.VALIDATION_ERROR,
+				'파티 최대 인원을 초과하여 참가할 수 없습니다.',
+			);
+		}
+
 		let userGameProfile = await this.userGameProfileRepository.findOne({
 			where: {
 				user: { id: userId },
