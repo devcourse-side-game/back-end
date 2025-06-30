@@ -1,5 +1,66 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { User } from 'src/users/entities/user.entity';
+
+export class PartyListLeaderDto {
+	@ApiProperty({ example: 1, description: '리더 유저 ID' })
+	userId: number;
+
+	@ApiProperty({ example: 'user1', description: '리더 유저네임' })
+	username: string;
+
+	@ApiProperty({ example: 'pro_gamer123', description: '리더의 게임 내 닉네임' })
+	gameUsername: string;
+}
+
+export class PartyListItemDto {
+	@ApiProperty({ example: 1, description: '파티 ID' })
+	id: number;
+
+	@ApiProperty({ example: '같이 즐겁게 게임해요', description: '파티 제목' })
+	title: string;
+
+	@ApiProperty({ example: 1, description: '게임 ID' })
+	gameId: number;
+
+	@ApiProperty({
+		example: 'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
+		description: '게임 배너 이미지 URL',
+	})
+	gameBannerUrl: string;
+
+	@ApiProperty({ example: 1, description: '파티장(생성자) ID' })
+	creatorId: number;
+
+	@ApiPropertyOptional({ example: '레이드', description: '파티 목적 태그' })
+	purposeTag?: string;
+
+	@ApiProperty({ example: 8, description: '최대 인원' })
+	maxParticipants: number;
+
+	@ApiPropertyOptional({ example: '파티 설명', description: '파티 설명' })
+	description?: string;
+
+	@ApiProperty({ example: false, description: '비공개 여부' })
+	isPrivate: boolean;
+
+	@ApiPropertyOptional({ example: '1234', description: '비공개 파티 접근 코드' })
+	accessCode?: string;
+
+	@ApiProperty({ example: false, description: '완료 여부' })
+	isCompleted: boolean;
+
+	@ApiProperty({ example: '2025-06-10T18:00:00', description: '생성일' })
+	createdAt: Date;
+
+	@ApiProperty({ example: '2025-06-10T18:00:00', description: '수정일' })
+	updatedAt: Date;
+
+	@ApiProperty({ type: () => PartyListLeaderDto, nullable: true, description: '리더 정보' })
+	leader: PartyListLeaderDto | null;
+
+	@ApiProperty({ example: 3, description: '현재 멤버 수' })
+	currentMemberCount: number;
+}
 
 export class UserGameProfileDto {
 	@ApiProperty({ example: 'player123' })

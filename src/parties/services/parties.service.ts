@@ -198,8 +198,13 @@ export class PartiesService {
 		isPrivate?: boolean;
 		page?: number;
 		limit?: number;
-	}): Promise<Party[]> {
-		const qb = this.partyRepository.createQueryBuilder('party');
+	}): Promise<import('../dto/response.dto').PartyListItemDto[]> {
+		// relations: game, members, members.user, members.userGameProfile
+		const qb = this.partyRepository
+			.createQueryBuilder('party')
+			.leftJoinAndSelect('party.game', 'game')
+			.leftJoinAndSelect('party.members', 'members')
+			.leftJoinAndSelect('members.user', 'user');
 		if (query.gameId) qb.andWhere('party.gameId = :gameId', { gameId: query.gameId });
 		if (query.isCompleted !== undefined)
 			qb.andWhere('party.isCompleted = :isCompleted', { isCompleted: query.isCompleted });
@@ -207,7 +212,47 @@ export class PartiesService {
 			qb.andWhere('party.isPrivate = :isPrivate', { isPrivate: query.isPrivate });
 		qb.orderBy('party.createdAt', 'DESC');
 		qb.skip(((query.page ?? 1) - 1) * (query.limit ?? 20)).take(query.limit ?? 20);
-		return qb.getMany();
+		const parties = await qb.getMany();
+
+		// 각 파티별 리더, 멤버 수, 게임 배너, 리더의 게임네임 포함 변환
+		return Promise.all(
+			parties.map(async (party) => {
+				const leader = party.members.find((m) => m.isLeader);
+				let leaderGameUsername = '';
+				if (leader && leader.user) {
+					// 리더의 게임 프로필 조회
+					const userGameProfile = await this.userGameProfileRepository.findOne({
+						where: { user: { id: leader.user.id }, game: { id: party.gameId } },
+					});
+					leaderGameUsername = userGameProfile?.game_username || '';
+				}
+				const dto: import('../dto/response.dto').PartyListItemDto = {
+					id: party.id,
+					title: party.title,
+					gameId: party.gameId,
+					gameBannerUrl: party.game?.bannerUrl || '',
+					creatorId: party.creatorId,
+					purposeTag: party.purposeTag,
+					maxParticipants: party.maxParticipants,
+					description: party.description,
+					isPrivate: party.isPrivate,
+					accessCode: party.accessCode,
+					isCompleted: party.isCompleted,
+					createdAt: party.createdAt,
+					updatedAt: party.updatedAt,
+					leader:
+						leader && leader.user
+							? {
+									userId: leader.user.id,
+									username: leader.user.username,
+									gameUsername: leaderGameUsername,
+								}
+							: null,
+					currentMemberCount: party.members.length,
+				};
+				return dto;
+			}),
+		);
 	}
 
 	async joinParty(partyId: number, userId: number): Promise<void> {

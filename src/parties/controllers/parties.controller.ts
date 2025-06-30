@@ -16,6 +16,7 @@ import { PartiesService } from '../services/parties.service';
 import { CreatePartyDto } from '../dto/create-party.dto';
 import { UpdatePartyDto } from '../dto/update-party.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { PartyListItemDto } from '../dto/response.dto';
 import {
 	ApiTags,
 	ApiOperation,
@@ -81,7 +82,37 @@ export class PartiesController {
 
 	@Get()
 	@ApiOperation({ summary: '파티 목록 조회' })
-	@ApiOkResponse({ description: '파티 목록을 반환합니다.', type: [Party] })
+	@ApiOkResponse({
+		description: '파티 목록을 반환합니다.',
+		type: PartyListItemDto,
+		isArray: true,
+		schema: {
+			example: [
+				{
+					id: 1,
+					title: '같이 즐겁게 게임해요',
+					gameId: 1,
+					gameBannerUrl:
+						'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
+					creatorId: 1,
+					purposeTag: '레이드',
+					maxParticipants: 8,
+					description: '파티 설명',
+					isPrivate: false,
+					accessCode: null,
+					isCompleted: false,
+					createdAt: '2025-06-10T18:00:00',
+					updatedAt: '2025-06-10T18:00:00',
+					leader: {
+						userId: 1,
+						username: 'user1',
+						gameUsername: 'pro_gamer123',
+					},
+					currentMemberCount: 3,
+				},
+			],
+		},
+	})
 	@ApiQuery({ name: 'gameId', required: false, type: Number, description: '게임 ID' })
 	@ApiQuery({ name: 'isCompleted', required: false, type: Boolean, description: '완료 여부' })
 	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
@@ -93,7 +124,7 @@ export class PartiesController {
 		@Query('isPrivate') isPrivate?: boolean,
 		@Query('page') page = 1,
 		@Query('limit') limit = 20,
-	): Promise<Party[]> {
+	): Promise<import('../dto/response.dto').PartyListItemDto[]> {
 		return this.partiesService.listParties({
 			gameId,
 			isCompleted,
