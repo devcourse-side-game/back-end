@@ -274,4 +274,20 @@ export class PartiesService {
 			relations: ['user'],
 		});
 	}
+
+	/**
+	 * 파티 완료 처리
+	 */
+	async completeParty(partyId: number, userId: number): Promise<void> {
+		const party = await this.partyRepository.findOne({ where: { id: partyId } });
+		if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
+		if (party.creatorId !== userId) {
+			throw new ForbiddenException('파티 생성자만 완료 처리할 수 있습니다.');
+		}
+		if (party.isCompleted) {
+			throw new BadRequestException('이미 완료된 파티입니다.');
+		}
+		party.isCompleted = true;
+		await this.partyRepository.save(party);
+	}
 }

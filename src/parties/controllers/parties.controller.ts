@@ -133,4 +133,18 @@ export class PartiesController {
 			limit,
 		});
 	}
+
+	@Patch(':id/complete')
+	@ApiOperation({ summary: '파티 완료 처리' })
+	@ApiOkResponse({
+		description: '파티가 완료 처리되었습니다.',
+		schema: { example: { message: '파티가 완료 처리되었습니다.' } },
+	})
+	async completeParty(
+		@Param('id', ParseIntPipe) id: number,
+		@GetUser() user: { id: number },
+	): Promise<{ message: string }> {
+		await this.partiesService.completeParty(id, user.id);
+		return { message: '파티가 완료 처리되었습니다.' };
+	}
 }
