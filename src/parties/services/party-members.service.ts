@@ -22,13 +22,19 @@ export class PartyMembersService {
 		private readonly userGameProfileRepository: Repository<UserGameProfile>,
 	) {}
 
-	async joinParty(partyId: number, userId: number): Promise<{ username: string }> {
+	async joinParty(
+		partyId: number,
+		userId: number,
+		accessCode?: string,
+	): Promise<{ username: string }> {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
-		// 비공개 파티는 join-private 엔드포인트를 사용해야 함
+		// 비공개 파티는 접근 코드 검증
 		if (party.isPrivate) {
-			throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
+			if (!accessCode || party.accessCode !== accessCode) {
+				throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
+			}
 		}
 
 		// 현재 멤버 수 체크
@@ -127,37 +133,6 @@ export class PartyMembersService {
 			partyId: party.id,
 			partyTitle: party.title,
 		};
-	}
-
-	async joinPrivateParty(
-		partyId: number,
-		userId: number,
-		accessCode: string,
-	): Promise<{ username: string }> {
-		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
-		if (!party.isPrivate) throw new AppException(ErrorCode.VALIDATION_ERROR);
-		if (party.accessCode !== accessCode)
-			throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
-
-		// 현재 멤버 수 체크
-		const currentCount = await this.partyMemberRepository.count({ where: { partyId } });
-		if (currentCount >= party.maxParticipants) {
-			throw new AppException(ErrorCode.PARTY_MAX_PARTICIPANTS);
-		}
-
-		const exists = await this.partyMemberRepository.findOne({
-			where: { partyId, userId },
-		});
-		if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
-		const member = this.partyMemberRepository.create({
-			partyId,
-			userId,
-			isLeader: false,
-		});
-		await this.partyMemberRepository.save(member);
-		const user = await this.userRepository.findOne({ where: { id: userId } });
-		return { username: user?.username || '' };
 	}
 
 	async kickMember(

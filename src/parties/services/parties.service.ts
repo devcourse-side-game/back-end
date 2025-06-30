@@ -10,6 +10,7 @@ import { User } from '../../users/entities/user.entity';
 import { PartyMember } from '../entities/party-members.entity';
 import { CreatePartyDto } from '../dto/create-party.dto';
 import { UpdatePartyDto } from '../dto/update-party.dto';
+import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 
 @Injectable()
 export class PartiesService {
@@ -30,7 +31,7 @@ export class PartiesService {
 	/**
 	 * 파티 생성
 	 */
-	async createParty(dto: CreatePartyDto, creatorId: number): Promise<Party> {
+	async createParty(dto: CreatePartyDto, creatorId: number): Promise<PartyWithMembersDto> {
 		const queryRunner = this.dataSource.createQueryRunner();
 		await queryRunner.connect();
 		await queryRunner.startTransaction();
@@ -66,7 +67,7 @@ export class PartiesService {
 				maxParticipants: dto.maxParticipants,
 				description: dto.description,
 				isPrivate: dto.isPrivate ?? false,
-				accessCode: dto.accessCode,
+				accessCode: dto.isPrivate ? dto.accessCode : undefined,
 				isCompleted: false,
 			});
 			const newParty = await queryRunner.manager.save(party);
@@ -79,7 +80,13 @@ export class PartiesService {
 			await queryRunner.manager.save(partyMember);
 
 			await queryRunner.commitTransaction();
-			return newParty;
+
+			// 생성된 파티 정보를 DTO로 변환하여 반환 (accessCode 제외)
+			const createdParty = await this.partyRepository.findOne({
+				where: { id: newParty.id },
+				relations: ['creator', 'game', 'members', 'members.user'],
+			});
+			return this.toPartyWithMembersDto(createdParty!);
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
@@ -92,9 +99,7 @@ export class PartiesService {
 	/**
 	 * 파티 ID로 파티 조회 (DTO 변환)
 	 */
-	async findPartyById(
-		id: number,
-	): Promise<import('../dto/party-with-members.dto').PartyWithMembersDto> {
+	async findPartyById(id: number): Promise<PartyWithMembersDto> {
 		const party = await this.partyRepository.findOne({
 			where: { id },
 			relations: ['creator', 'game', 'members', 'members.user'],
@@ -106,9 +111,7 @@ export class PartiesService {
 	/**
 	 * Party 엔티티를 PartyWithMembersDto로 변환 (password 등 민감 정보 제거)
 	 */
-	toPartyWithMembersDto(
-		party: Party,
-	): import('../dto/party-with-members.dto').PartyWithMembersDto {
+	toPartyWithMembersDto(party: Party): PartyWithMembersDto {
 		const {
 			id,
 			title,
@@ -118,7 +121,6 @@ export class PartiesService {
 			maxParticipants,
 			description,
 			isPrivate,
-			accessCode,
 			isCompleted,
 			createdAt,
 			updatedAt,
@@ -134,7 +136,6 @@ export class PartiesService {
 			maxParticipants,
 			description,
 			isPrivate,
-			accessCode,
 			isCompleted,
 			createdAt,
 			updatedAt,
@@ -233,7 +234,6 @@ export class PartiesService {
 					maxParticipants: party.maxParticipants,
 					description: party.description,
 					isPrivate: party.isPrivate,
-					accessCode: party.accessCode,
 					isCompleted: party.isCompleted,
 					createdAt: party.createdAt,
 					updatedAt: party.updatedAt,
