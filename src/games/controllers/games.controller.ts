@@ -31,14 +31,14 @@ export class GamesController {
 		const take = Math.min(Number(limit) || 20, 100);
 		const skip = Number(page) > 1 ? (Number(page) - 1) * take : 0;
 
-		if (search) {
+if (search) {
 			const searchNum = Number(search);
 			const or: import('typeorm').FindOptionsWhere<Game>[] = [
-				{ name: Like(`%${search}%`) },
-				{ slug: Like(`%${search}%`) },
+				{ ...where, name: Like(`%${search}%`) },
+				{ ...where, slug: Like(`%${search}%`) },
 			];
 			if (!isNaN(searchNum)) {
-				or.push({ steamAppId: searchNum });
+				or.push({ ...where, steamAppId: searchNum });
 			}
 			return this.gameRepository.find({
 				take,
