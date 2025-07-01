@@ -31,7 +31,7 @@ export class CreatePartyDto {
 
 	@ApiProperty({ example: 8, description: '최대 참가자 수' })
 	@IsInt()
-	@Min(1)
+	@Min(2)
 	maxParticipants: number;
 
 	@ApiProperty({ example: '파티 설명', required: false })
