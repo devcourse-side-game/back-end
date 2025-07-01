@@ -76,9 +76,7 @@ export class GamesController {
 		description: '게임을 찾을 수 없음',
 		schema: {
 			example: {
-				success: false,
-				statusCode: 404,
-				errorCode: 'g-002',
+				errorCode: 'p-011',
 				message: '게임을 찾을 수 없습니다.',
 				detail: '존재하지 않는 게임입니다.',
 				timestamp: '2025-07-01T12:00:00.000Z',
