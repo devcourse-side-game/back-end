@@ -13,6 +13,7 @@ import {
 	ChangePasswordResponseDto,
 	DeleteAccountResponseDto,
 	UsersErrorResponseDto,
+	PasswordErrorResponseDto,
 } from '../dto';
 
 @ApiTags('users')
@@ -61,9 +62,9 @@ export class UsersController {
 		type: ChangePasswordResponseDto,
 	})
 	@ApiResponse({
-		status: 401,
+		status: 400,
 		description: '현재 비밀번호가 일치하지 않음',
-		type: UsersErrorResponseDto,
+		type: PasswordErrorResponseDto,
 	})
 	@ApiResponse({ status: 404, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
 	async changePassword(@GetUser() jwtPayload: JwtPayload, @Body() changePasswordDto: ChangePasswordDto) {

@@ -47,3 +47,14 @@ export class UsersErrorResponseDto {
 	@ApiProperty({ example: 'Not Found' })
 	error: string;
 }
+
+export class PasswordErrorResponseDto {
+	@ApiProperty({ example: 400 })
+	statusCode: number;
+
+	@ApiProperty({ example: '현재 비밀번호가 일치하지 않습니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'Bad Request' })
+	error: string;
+}

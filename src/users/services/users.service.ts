@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -86,7 +86,7 @@ export class UsersService {
     );
     
     if (!isPasswordValid) {
-      throw new UnauthorizedException('현재 비밀번호가 일치하지 않습니다.');
+      throw new BadRequestException('현재 비밀번호가 일치하지 않습니다.');
     }
     
     // 새 비밀번호 해싱

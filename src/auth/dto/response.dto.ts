@@ -33,3 +33,14 @@ export class AuthErrorResponseDto {
 	@ApiProperty({ example: 'Unauthorized' })
 	error: string;
 }
+
+export class NicknameCheckErrorResponseDto {
+	@ApiProperty({ example: 409 })
+	statusCode: number;
+
+	@ApiProperty({ example: '이미 존재하는 닉네임입니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'Conflict' })
+	error: string;
+}

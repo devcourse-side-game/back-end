@@ -9,6 +9,7 @@ import {
 	LogoutResponseDto,
 	AuthErrorResponseDto,
 	NicknameCheckResponseDto,
+	NicknameCheckErrorResponseDto,
 } from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetUser } from '../decorator/get-user.decorator';
@@ -22,7 +23,7 @@ export class AuthController {
 	@HttpCode(201)
 	@ApiOperation({ summary: '회원가입', description: '새 사용자 계정 생성' })
 	@ApiResponse({ status: 201, description: '회원가입 성공', type: RegisterResponseDto })
-	@ApiResponse({ status: 409, description: '이미 존재하는 사용자명', type: AuthErrorResponseDto })
+	@ApiResponse({ status: 409, description: '이미 존재하는 사용자명', type: NicknameCheckErrorResponseDto })
 	async register(@Body() registerDto: RegisterDto) {
 		return await this.authService.register(registerDto);
 	}
@@ -51,7 +52,7 @@ export class AuthController {
 	@Get('nicknameCheck')
 	@ApiOperation({ summary: '닉네임 중복 확인', description: '닉네임 중복 확인' })
 	@ApiResponse({ status: 200, description: '닉네임 중복 확인 성공', type: NicknameCheckResponseDto })
-	@ApiResponse({ status: 409, description: '닉네임 중복', type: AuthErrorResponseDto })
+	@ApiResponse({ status: 409, description: '닉네임 중복', type: NicknameCheckErrorResponseDto })
 	@ApiQuery({ name: 'nickname', description: '닉네임', required: true })
 	async nicknameCheck(@Query('nickname') nickname: string) {
 		return await this.authService.nicknameCheck(nickname);
