@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { User } from 'src/users/entities/user.entity';
+import { PartyCreatorDto } from './party-with-members.dto';
 
 export class PartyListLeaderDto {
 	@ApiProperty({ example: 1, description: '리더 유저 ID' })
@@ -116,8 +116,8 @@ export class PartyDto {
 	@ApiProperty({ example: false })
 	isPrivate: boolean;
 
-	@ApiProperty({ type: () => User })
-	creator: User;
+	@ApiProperty({ type: () => PartyCreatorDto, description: '파티 생성자 정보' })
+	creator: PartyCreatorDto;
 
 	@ApiProperty({ example: '2025-06-03T14:30:00+09:00' })
 	createdAt: string;
