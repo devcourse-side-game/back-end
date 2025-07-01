@@ -42,7 +42,10 @@ export class PartiesController {
 
 	@Post()
 	@ApiOperation({ summary: '파티 생성' })
-	@ApiCreatedResponse({ description: '파티가 성공적으로 생성되었습니다.', type: Party })
+	@ApiCreatedResponse({
+		description: '파티가 성공적으로 생성되었습니다.',
+		type: PartyWithMembersDto,
+	})
 	@ApiBadRequestResponse({
 		description: '잘못된 요청 데이터입니다.',
 		schema: {
@@ -87,7 +90,7 @@ export class PartiesController {
 	createParty(
 		@Body() createPartyDto: CreatePartyDto,
 		@GetUser() user: { id: number },
-	): Promise<Party> {
+	): Promise<PartyWithMembersDto> {
 		return this.partiesService.createParty(createPartyDto, user.id);
 	}
 
