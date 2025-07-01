@@ -77,7 +77,7 @@ export class PartiesController {
 			example: {
 				success: false,
 				statusCode: 404,
-				errorCode: 'p-011',
+				errorCode: 'gm-001',
 				message: '게임을 찾을 수 없습니다.',
 				detail: '존재하지 않는 게임입니다.',
 				timestamp: '2025-06-30T12:00:00.000Z',

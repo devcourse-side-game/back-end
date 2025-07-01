@@ -21,7 +21,9 @@ export enum ErrorCode {
     PARTY_SELF_ACTION_NOT_ALLOWED = 'p-008', // 자기 자신에 대한 작업 불가
     PARTY_ALREADY_COMPLETED = 'p-009', // 이미 완료된 파티
     PARTY_NOT_CREATOR = 'p-010', // 파티 생성자가 아님
-    GAME_NOT_FOUND = 'p-011', // 게임을 찾을 수 없음
+    
+    // 게임 관련 오류 (gm-xxx)
+    GAME_NOT_FOUND = 'gm-001', // 게임을 찾을 수 없음
     
     // 일반 오류 (g-xxx)
     VALIDATION_ERROR = 'g-001',
