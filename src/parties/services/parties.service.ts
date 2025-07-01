@@ -79,16 +79,22 @@ export class PartiesService {
 			});
 			await queryRunner.manager.save(partyMember);
 
-			await queryRunner.commitTransaction();
-
-			// 생성된 파티 정보를 DTO로 변환하여 반환 (accessCode 제외)
-			const createdParty = await this.partyRepository.findOne({
+			// 트랜잭션 내에서 생성된 파티 정보 조회 (relations 포함)
+			const createdParty = await queryRunner.manager.findOne(Party, {
 				where: { id: newParty.id },
 				relations: ['creator', 'game', 'members', 'members.user'],
 			});
+
+			await queryRunner.commitTransaction();
+
+			// 방어적 프로그래밍: 생성된 파티가 조회되지 않는 예외 상황 대비
 			if (!createdParty) {
-				throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+				throw new AppException(
+					ErrorCode.PARTY_NOT_FOUND,
+					'파티 생성 후 조회에 실패했습니다.',
+				);
 			}
+
 			return this.toPartyWithMembersDto(createdParty);
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
@@ -164,20 +170,39 @@ export class PartiesService {
 	/**
 	 * 파티 정보 수정
 	 */
-	async updateParty(partyId: number, dto: UpdatePartyDto, userId: number): Promise<Party> {
-		const party = await this.findPartyById(partyId);
+	async updateParty(
+		partyId: number,
+		dto: UpdatePartyDto,
+		userId: number,
+	): Promise<PartyWithMembersDto> {
+		const party = await this.partyRepository.findOne({
+			where: { id: partyId },
+			relations: ['creator', 'game', 'members', 'members.user'],
+		});
+		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 		if (party.creatorId !== userId) {
 			throw new AppException(ErrorCode.PARTY_NOT_CREATOR);
 		}
+
+		// 비공개 파티로 전환 시 accessCode는 필수
+		if (dto.isPrivate === true && !dto.accessCode) {
+			throw new AppException(
+				ErrorCode.VALIDATION_ERROR,
+				'비공개 파티는 참여 코드가 필요합니다.',
+			);
+		}
+
 		Object.assign(party, {
 			title: dto.title ?? party.title,
 			purposeTag: dto.purposeTag ?? party.purposeTag,
 			maxParticipants: dto.maxParticipants ?? party.maxParticipants,
 			description: dto.description ?? party.description,
 			isPrivate: dto.isPrivate ?? party.isPrivate,
-			accessCode: dto.accessCode ?? party.accessCode,
+			accessCode: dto.isPrivate === false ? undefined : (dto.accessCode ?? party.accessCode),
 		});
-		return this.partyRepository.save(party);
+
+		const updatedParty = await this.partyRepository.save(party);
+		return this.toPartyWithMembersDto(updatedParty);
 	}
 
 	/**

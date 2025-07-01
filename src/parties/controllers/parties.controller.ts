@@ -29,7 +29,6 @@ import {
 	ApiForbiddenResponse,
 	ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { Party } from '../entities/party.entity';
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
@@ -129,13 +128,16 @@ export class PartiesController {
 
 	@Patch(':id')
 	@ApiOperation({ summary: '파티 정보 수정' })
-	@ApiOkResponse({ description: '수정된 파티 정보를 반환합니다.', type: Party })
+	@ApiOkResponse({
+		description: '수정된 파티 정보를 반환합니다.',
+		type: PartyWithMembersDto,
+	})
 	@UsePipes(new ValidationPipe({ transform: true }))
 	updateParty(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updatePartyDto: UpdatePartyDto,
 		@GetUser() user: { id: number },
-	): Promise<Party> {
+	): Promise<PartyWithMembersDto> {
 		return this.partiesService.updateParty(id, updatePartyDto, user.id);
 	}
 

@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PartyMember } from '../entities/party-members.entity';
 import { Party } from '../entities/party.entity';
 import { User } from '../../users/entities/user.entity';
 import { AppException } from '../../common/exceptions/app.exception';
 import { ErrorCode } from '../../common/constants/error-codes';
 import { UserGameProfile } from '../entities/user-game-profile.entity';
+import { Game } from '../../games/entities/game.entity';
 import { MemberListResponseDto, PartyMemberDto } from '../dto/response.dto';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class PartyMembersService {
 		private readonly userRepository: Repository<User>,
 		@InjectRepository(UserGameProfile)
 		private readonly userGameProfileRepository: Repository<UserGameProfile>,
+		private readonly dataSource: DataSource,
 	) {}
 
 	async joinParty(
@@ -27,75 +29,104 @@ export class PartyMembersService {
 		userId: number,
 		accessCode?: string,
 	): Promise<{ username: string }> {
-		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
-		// 비공개 파티는 접근 코드 검증
-		if (party.isPrivate) {
-			if (!accessCode || party.accessCode !== accessCode) {
-				throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
+		try {
+			const party = await queryRunner.manager.findOne(Party, { where: { id: partyId } });
+			if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+
+			// 비공개 파티는 접근 코드 검증
+			if (party.isPrivate) {
+				if (!accessCode || party.accessCode !== accessCode) {
+					throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
+				}
 			}
-		}
 
-		// 현재 멤버 수 체크
-		const currentCount = await this.partyMemberRepository.count({ where: { partyId } });
-		if (currentCount >= party.maxParticipants) {
-			throw new AppException(ErrorCode.PARTY_MAX_PARTICIPANTS);
-		}
-
-		let userGameProfile = await this.userGameProfileRepository.findOne({
-			where: {
-				user: { id: userId },
-				game: { id: party.gameId },
-			},
-		});
-		if (!userGameProfile) {
-			// 유저 정보 조회
-			const user = await this.userRepository.findOne({ where: { id: userId } });
-			if (!user) throw new AppException(ErrorCode.USER_NOT_FOUND);
-			// 게임 정보 조회
-			const game = await this.partyRepository.manager
-				.getRepository('Game')
-				.findOne({ where: { id: party.gameId } });
-			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
-			// UserGameProfile 자동 생성 (username 사용)
-			userGameProfile = this.userGameProfileRepository.create({
-				user,
-				game,
-				game_username: user.username,
+			// 현재 멤버 수 체크
+			const currentCount = await queryRunner.manager.count(PartyMember, {
+				where: { partyId },
 			});
-			await this.userGameProfileRepository.save(userGameProfile);
+			if (currentCount >= party.maxParticipants) {
+				throw new AppException(ErrorCode.PARTY_MAX_PARTICIPANTS);
+			}
+
+			// 이미 참가한 사용자인지 확인
+			const exists = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId },
+			});
+			if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
+
+			const user = await queryRunner.manager.findOne(User, { where: { id: userId } });
+			if (!user) throw new AppException(ErrorCode.USER_NOT_FOUND);
+
+			const game = await queryRunner.manager.findOne(Game, { where: { id: party.gameId } });
+			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
+
+			// UserGameProfile 조회/생성
+			let userGameProfile = await queryRunner.manager.findOne(UserGameProfile, {
+				where: {
+					user: { id: userId },
+					game: { id: party.gameId },
+				},
+			});
+			if (!userGameProfile) {
+				userGameProfile = queryRunner.manager.create(UserGameProfile, {
+					user,
+					game,
+					game_username: user.username,
+				});
+				await queryRunner.manager.save(userGameProfile);
+			}
+
+			// 파티 멤버 추가
+			const member = queryRunner.manager.create(PartyMember, {
+				partyId,
+				userId,
+				isLeader: false,
+			});
+			await queryRunner.manager.save(member);
+
+			await queryRunner.commitTransaction();
+			return { username: user.username };
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+		} finally {
+			await queryRunner.release();
 		}
-
-		const exists = await this.partyMemberRepository.findOne({
-			where: { partyId, userId },
-		});
-		if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
-
-		const member = this.partyMemberRepository.create({
-			partyId,
-			userId,
-			isLeader: false,
-		});
-		await this.partyMemberRepository.save(member);
-		const user = await this.userRepository.findOne({ where: { id: userId } });
-		return { username: user?.username || '' };
 	}
 
 	async leaveParty(partyId: number, userId: number): Promise<{ username: string }> {
-		const member = await this.partyMemberRepository.findOne({
-			where: { partyId, userId },
-		});
-		if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
-		// 파티장은 탈퇴할 수 없음
-		if (member.isLeader) {
-			throw new AppException(ErrorCode.PARTY_LEADER_CANNOT_LEAVE);
+		try {
+			const member = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId },
+				relations: ['user'],
+			});
+			if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
+
+			// 파티장은 탈퇴할 수 없음
+			if (member.isLeader) {
+				throw new AppException(ErrorCode.PARTY_LEADER_CANNOT_LEAVE);
+			}
+
+			await queryRunner.manager.remove(member);
+			await queryRunner.commitTransaction();
+
+			return { username: member.user?.username || '' };
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+		} finally {
+			await queryRunner.release();
 		}
-
-		await this.partyMemberRepository.remove(member);
-		const user = await this.userRepository.findOne({ where: { id: userId } });
-		return { username: user?.username || '' };
 	}
 
 	async getPartyMembers(partyId: number): Promise<MemberListResponseDto> {
@@ -140,25 +171,41 @@ export class PartyMembersService {
 		leaderId: number,
 		userId: number,
 	): Promise<{ username: string }> {
-		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
-		// 자기 자신을 강퇴할 수 없음
-		if (leaderId === userId) {
-			throw new AppException(ErrorCode.PARTY_SELF_ACTION_NOT_ALLOWED);
+		try {
+			const party = await queryRunner.manager.findOne(Party, { where: { id: partyId } });
+			if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+
+			// 자기 자신을 강퇴할 수 없음
+			if (leaderId === userId) {
+				throw new AppException(ErrorCode.PARTY_SELF_ACTION_NOT_ALLOWED);
+			}
+
+			const leader = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId: leaderId },
+			});
+			if (!leader || !leader.isLeader) throw new AppException(ErrorCode.PARTY_NOT_LEADER);
+
+			const member = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId },
+				relations: ['user'],
+			});
+			if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
+
+			await queryRunner.manager.remove(member);
+			await queryRunner.commitTransaction();
+
+			return { username: member.user?.username || '' };
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+		} finally {
+			await queryRunner.release();
 		}
-
-		const leader = await this.partyMemberRepository.findOne({
-			where: { partyId, userId: leaderId },
-		});
-		if (!leader || !leader.isLeader) throw new AppException(ErrorCode.PARTY_NOT_LEADER);
-		const member = await this.partyMemberRepository.findOne({
-			where: { partyId, userId },
-		});
-		if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
-		await this.partyMemberRepository.remove(member);
-		const user = await this.userRepository.findOne({ where: { id: userId } });
-		return { username: user?.username || '' };
 	}
 
 	async changeLeader(
@@ -166,26 +213,42 @@ export class PartyMembersService {
 		leaderId: number,
 		newLeaderId: number,
 	): Promise<{ username: string }> {
-		const party = await this.partyRepository.findOne({ where: { id: partyId } });
-		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
 
-		// 자기 자신에게 권한을 이양할 수 없음
-		if (leaderId === newLeaderId) {
-			throw new AppException(ErrorCode.PARTY_SELF_ACTION_NOT_ALLOWED);
+		try {
+			const party = await queryRunner.manager.findOne(Party, { where: { id: partyId } });
+			if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+
+			// 자기 자신에게 권한을 이양할 수 없음
+			if (leaderId === newLeaderId) {
+				throw new AppException(ErrorCode.PARTY_SELF_ACTION_NOT_ALLOWED);
+			}
+
+			const leader = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId: leaderId },
+			});
+			if (!leader || !leader.isLeader) throw new AppException(ErrorCode.PARTY_NOT_LEADER);
+
+			const newLeader = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId: newLeaderId },
+				relations: ['user'],
+			});
+			if (!newLeader) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
+
+			leader.isLeader = false;
+			newLeader.isLeader = true;
+			await queryRunner.manager.save([leader, newLeader]);
+			await queryRunner.commitTransaction();
+
+			return { username: newLeader.user?.username || '' };
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+		} finally {
+			await queryRunner.release();
 		}
-
-		const leader = await this.partyMemberRepository.findOne({
-			where: { partyId, userId: leaderId },
-		});
-		if (!leader || !leader.isLeader) throw new AppException(ErrorCode.PARTY_NOT_LEADER);
-		const newLeader = await this.partyMemberRepository.findOne({
-			where: { partyId, userId: newLeaderId },
-		});
-		if (!newLeader) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
-		leader.isLeader = false;
-		newLeader.isLeader = true;
-		await this.partyMemberRepository.save([leader, newLeader]);
-		const user = await this.userRepository.findOne({ where: { id: newLeaderId } });
-		return { username: user?.username || '' };
 	}
 }
