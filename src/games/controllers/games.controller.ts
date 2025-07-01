@@ -1,8 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Query, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { Game } from '../entities/game.entity';
+import { AppException } from '../../common/exceptions/app.exception';
+import { ErrorCode } from '../../common/constants/error-codes';
 
 @ApiTags('games')
 @Controller('games')
@@ -64,5 +66,32 @@ export class GamesController {
 		}
 
 		return this.gameRepository.find({ where, take, skip });
+	}
+
+	@ApiOperation({ summary: '게임 ID로 특정 게임 조회' })
+	@ApiParam({ name: 'id', description: '게임 ID', type: Number })
+	@ApiResponse({ status: 200, description: '게임 정보', type: Game })
+	@ApiResponse({
+		status: 404,
+		description: '게임을 찾을 수 없음',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'g-002',
+				message: '게임을 찾을 수 없습니다.',
+				detail: '존재하지 않는 게임입니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/games/999',
+			},
+		},
+	})
+	@Get(':id')
+	async getGameById(@Param('id', ParseIntPipe) id: number) {
+		const game = await this.gameRepository.findOne({ where: { id } });
+		if (!game) {
+			throw new AppException(ErrorCode.GAME_NOT_FOUND);
+		}
+		return game;
 	}
 }
