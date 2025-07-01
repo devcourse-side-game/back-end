@@ -34,7 +34,13 @@ export class PartyMembersService {
 		await queryRunner.startTransaction();
 
 		try {
-			const party = await queryRunner.manager.findOne(Party, { where: { id: partyId } });
+			// FOR UPDATE로 파티 행에 배타적 잠금 설정 (동시성 제어)
+			const party = await queryRunner.manager
+				.createQueryBuilder(Party, 'party')
+				.where('party.id = :partyId', { partyId })
+				.setLock('pessimistic_write') // FOR UPDATE
+				.getOne();
+
 			if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
 			// 비공개 파티는 접근 코드 검증
@@ -44,19 +50,19 @@ export class PartyMembersService {
 				}
 			}
 
-			// 현재 멤버 수 체크
+			// 이미 참가한 사용자인지 확인 (중복 참가 방지)
+			const exists = await queryRunner.manager.findOne(PartyMember, {
+				where: { partyId, userId },
+			});
+			if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
+
+			// 현재 멤버 수 체크 (FOR UPDATE로 잠긴 상태에서 정확한 count)
 			const currentCount = await queryRunner.manager.count(PartyMember, {
 				where: { partyId },
 			});
 			if (currentCount >= party.maxParticipants) {
 				throw new AppException(ErrorCode.PARTY_MAX_PARTICIPANTS);
 			}
-
-			// 이미 참가한 사용자인지 확인
-			const exists = await queryRunner.manager.findOne(PartyMember, {
-				where: { partyId, userId },
-			});
-			if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
 
 			const user = await queryRunner.manager.findOne(User, { where: { id: userId } });
 			if (!user) throw new AppException(ErrorCode.USER_NOT_FOUND);
@@ -80,7 +86,7 @@ export class PartyMembersService {
 				await queryRunner.manager.save(userGameProfile);
 			}
 
-			// 파티 멤버 추가
+			// 파티 멤버 추가 (DB 유니크 제약으로 중복 방지)
 			const member = queryRunner.manager.create(PartyMember, {
 				partyId,
 				userId,
@@ -93,6 +99,10 @@ export class PartyMembersService {
 		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
+			// DB 제약 조건 위반 (중복 참가) 처리
+			if (error instanceof Error && error.message.includes('Duplicate entry')) {
+				throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
+			}
 			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
 		} finally {
 			await queryRunner.release();
