@@ -4,7 +4,7 @@ import { IsOptional, IsString, MaxLength } from 'class-validator';
 export class JoinPartyDto {
 	@ApiProperty({
 		example: '1234',
-		description: '비공개 파티의 경우 필요한 접근 코드',
+		description: '비공개 파티의 경우 필요한 접근 코드 (공개 파티는 생략 가능)',
 		required: false,
 	})
 	@IsOptional()
