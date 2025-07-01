@@ -50,13 +50,16 @@ export class PartiesService {
 				userGameProfile = queryRunner.manager.create(UserGameProfile, {
 					user: creator,
 					game: game,
-					game_username: creator.username,
+					gameUsername: creator.username,
 				});
 				await queryRunner.manager.save(userGameProfile);
 			}
 
 			if (dto.isPrivate && !dto.accessCode) {
-				throw new AppException(ErrorCode.VALIDATION_ERROR);
+				throw new AppException(
+					ErrorCode.VALIDATION_ERROR,
+					'비공개 파티는 참여 코드가 필요합니다.',
+				);
 			}
 
 			const party = queryRunner.manager.create(Party, {
@@ -240,47 +243,75 @@ export class PartiesService {
 		qb.skip(((query.page ?? 1) - 1) * (query.limit ?? 20)).take(query.limit ?? 20);
 		const parties = await qb.getMany();
 
-		// 각 파티별 리더, 멤버 수, 게임 배너, 리더의 게임네임 포함 변환
-		return Promise.all(
-			parties.map(async (party) => {
+		// N+1 문제를 해결하기 위해 리더들의 게임 프로필을 한 번에 조회합니다.
+		const leaderInfos = parties
+			.map((party) => {
 				const leader = party.members.find((m) => m.isLeader);
-				let leaderGameUsername = '';
-				if (leader && leader.user) {
-					// 리더의 게임 프로필 조회
-					const userGameProfile = await this.userGameProfileRepository.findOne({
-						where: { user: { id: leader.user.id }, game: { id: party.gameId } },
-					});
-					leaderGameUsername =
-						userGameProfile && userGameProfile.gameUsername
-							? userGameProfile.gameUsername
-							: '';
-				}
-				const dto: import('../dto/response.dto').PartyListItemDto = {
-					id: party.id,
-					title: party.title,
-					gameId: party.gameId,
-					gameBannerUrl: party.game?.bannerUrl || '',
-					creatorId: party.creatorId,
-					purposeTag: party.purposeTag,
-					maxParticipants: party.maxParticipants,
-					description: party.description,
-					isPrivate: party.isPrivate,
-					isCompleted: party.isCompleted,
-					createdAt: party.createdAt,
-					updatedAt: party.updatedAt,
-					leader:
-						leader && leader.user
-							? {
-									userId: leader.user.id,
-									username: leader.user.username,
-									gameUsername: leaderGameUsername,
-								}
-							: null,
-					currentMemberCount: party.members.length,
-				};
-				return dto;
-			}),
-		);
+				return leader ? { userId: leader.userId, gameId: party.gameId } : null;
+			})
+			.filter((info): info is { userId: number; gameId: number } => info !== null);
+
+		let userGameProfilesMap = new Map<string, string>();
+		if (leaderInfos.length > 0) {
+			const userGameProfiles = await this.userGameProfileRepository
+				.createQueryBuilder('profile')
+				.leftJoinAndSelect('profile.user', 'user')
+				.leftJoinAndSelect('profile.game', 'game')
+				.where(
+					leaderInfos
+						.map((_, i) => `(user.id = :userId_${i} AND game.id = :gameId_${i})`)
+						.join(' OR '),
+				)
+				.setParameters(
+					leaderInfos.reduce(
+						(params, info, i) => ({
+							...params,
+							[`userId_${i}`]: info.userId,
+							[`gameId_${i}`]: info.gameId,
+						}),
+						{},
+					),
+				)
+				.getMany();
+
+			userGameProfilesMap = new Map(
+				userGameProfiles.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
+			);
+		}
+
+		// 각 파티별 리더, 멤버 수, 게임 배너, 리더의 게임네임 포함 변환
+		return parties.map((party) => {
+			const leader = party.members.find((m) => m.isLeader);
+			const leaderGameUsername =
+				leader && leader.user
+					? userGameProfilesMap.get(`${leader.userId}-${party.gameId}`) || ''
+					: '';
+
+			const dto: import('../dto/response.dto').PartyListItemDto = {
+				id: party.id,
+				title: party.title,
+				gameId: party.gameId,
+				gameBannerUrl: party.game?.bannerUrl || '',
+				creatorId: party.creatorId,
+				purposeTag: party.purposeTag,
+				maxParticipants: party.maxParticipants,
+				description: party.description,
+				isPrivate: party.isPrivate,
+				isCompleted: party.isCompleted,
+				createdAt: party.createdAt,
+				updatedAt: party.updatedAt,
+				leader:
+					leader && leader.user
+						? {
+								userId: leader.user.id,
+								username: leader.user.username,
+								gameUsername: leaderGameUsername,
+							}
+						: null,
+				currentMemberCount: party.members.length,
+			};
+			return dto;
+		});
 	}
 
 	async joinParty(partyId: number, userId: number): Promise<void> {
