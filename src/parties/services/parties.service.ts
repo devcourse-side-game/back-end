@@ -148,7 +148,9 @@ export class PartiesService {
 				.getMany();
 
 			userGameProfilesMap = new Map(
-				userGameProfiles.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
+				userGameProfiles
+					.filter((p) => p.user && p.game && p.user.id && p.game.id)
+					.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
 			);
 		}
 
