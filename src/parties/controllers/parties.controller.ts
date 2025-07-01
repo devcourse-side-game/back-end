@@ -193,6 +193,12 @@ export class PartiesController {
 	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
 	@ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호' })
 	@ApiQuery({ name: 'limit', required: false, type: Number, description: '페이지 당 개수' })
+	@UsePipes(
+		new ValidationPipe({
+			transform: true,
+			transformOptions: { enableImplicitConversion: true },
+		}),
+	)
 	async listParties(
 		@Query('gameId') gameId?: number,
 		@Query('isCompleted') isCompleted?: boolean,
