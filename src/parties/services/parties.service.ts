@@ -111,19 +111,57 @@ export class PartiesService {
 	/**
 	 * 파티 ID로 파티 조회 (DTO 변환)
 	 */
+
 	async findPartyById(id: number): Promise<PartyWithMembersDto> {
 		const party = await this.partyRepository.findOne({
 			where: { id },
 			relations: ['creator', 'game', 'members', 'members.user'],
 		});
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
-		return this.toPartyWithMembersDto(party);
+
+		// 멤버별 gameUsername 일괄 조회
+		const memberInfos = (party.members || [])
+			.filter((m) => m.userId && party.gameId)
+			.map((m) => ({ userId: m.userId, gameId: party.gameId }));
+
+		let userGameProfilesMap = new Map<string, string>();
+		if (memberInfos.length > 0) {
+			const userGameProfiles = await this.userGameProfileRepository
+				.createQueryBuilder('profile')
+				.leftJoin('profile.user', 'user')
+				.leftJoin('profile.game', 'game')
+				.where(
+					memberInfos
+						.map((_, i) => `(user.id = :userId_${i} AND game.id = :gameId_${i})`)
+						.join(' OR '),
+				)
+				.setParameters(
+					memberInfos.reduce(
+						(params, info, i) => ({
+							...params,
+							[`userId_${i}`]: info.userId,
+							[`gameId_${i}`]: info.gameId,
+						}),
+						{},
+					),
+				)
+				.getMany();
+
+			userGameProfilesMap = new Map(
+				userGameProfiles.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
+			);
+		}
+
+		return this.toPartyWithMembersDto(party, userGameProfilesMap);
 	}
 
 	/**
 	 * Party 엔티티를 PartyWithMembersDto로 변환 (password 등 민감 정보 제거)
 	 */
-	toPartyWithMembersDto(party: Party): PartyWithMembersDto {
+	toPartyWithMembersDto(
+		party: Party,
+		userGameProfilesMap?: Map<string, string>,
+	): PartyWithMembersDto {
 		const {
 			id,
 			title,
@@ -166,6 +204,7 @@ export class PartiesService {
 				isLeader: m.isLeader,
 				joinedAt: m.joinedAt,
 				leftAt: m.leftAt,
+				gameUsername: userGameProfilesMap?.get(`${m.userId}-${gameId}`) ?? '',
 			})),
 		};
 	}
