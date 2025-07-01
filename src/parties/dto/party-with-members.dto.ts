@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class PartyMemberDto {
+export class PartyMemberSummaryDto {
 	@ApiProperty()
 	id: number;
 
@@ -75,6 +75,6 @@ export class PartyWithMembersDto {
 	@ApiProperty({ example: '2025-06-10T18:00:00' })
 	updatedAt: Date;
 
-	@ApiProperty({ type: [PartyMemberDto] })
-	members: PartyMemberDto[];
+	@ApiProperty({ type: [PartyMemberSummaryDto] })
+	members: PartyMemberSummaryDto[];
 }

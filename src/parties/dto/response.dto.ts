@@ -67,7 +67,7 @@ export class UserGameProfileDto {
 	gameUsername: string;
 }
 
-export class PartyMemberDto {
+export class PartyMemberDetailDto {
 	@ApiProperty({ example: 1 })
 	id: number; // PartyMembers.id
 
@@ -174,8 +174,8 @@ export class PartyResponseDto {
 
 // 파티원 목록 응답 DTO
 export class MemberListResponseDto {
-	@ApiProperty({ type: [PartyMemberDto] })
-	members: PartyMemberDto[];
+	@ApiProperty({ type: [PartyMemberDetailDto] })
+	members: PartyMemberDetailDto[];
 
 	@ApiProperty({ example: 1 })
 	partyId: number;

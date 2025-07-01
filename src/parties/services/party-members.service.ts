@@ -8,7 +8,7 @@ import { AppException } from '../../common/exceptions/app.exception';
 import { ErrorCode } from '../../common/constants/error-codes';
 import { UserGameProfile } from '../entities/user-game-profile.entity';
 import { Game } from '../../games/entities/game.entity';
-import { MemberListResponseDto, PartyMemberDto } from '../dto/response.dto';
+import { MemberListResponseDto, PartyMemberDetailDto } from '../dto/response.dto';
 
 @Injectable()
 export class PartyMembersService {
@@ -148,7 +148,7 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
-		const memberDtos: PartyMemberDto[] = await Promise.all(
+		const memberDtos: PartyMemberDetailDto[] = await Promise.all(
 			members.map(async (member) => {
 				const userGameProfile: UserGameProfile | null =
 					await this.userGameProfileRepository.findOne({
