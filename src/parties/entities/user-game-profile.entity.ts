@@ -25,8 +25,8 @@ export class UserGameProfile {
 	@JoinColumn({ name: 'game_id' })
 	game: Game;
 
-	@Column({ length: 100 })
-	game_username: string;
+	@Column({ name: 'game_username', length: 100 })
+	gameUsername: string;
 
 	@CreateDateColumn({ name: 'created_at' })
 	createdAt: Date;
