@@ -80,7 +80,7 @@ export class PartyMembersController {
 		return { message: `${username}님이 파티에 참가했습니다.` };
 	}
 
-	@Post('/leave')
+	@Delete('/me')
 	@ApiOperation({ summary: '파티 탈퇴' })
 	@ApiOkResponse({
 		description: '파티에서 탈퇴했습니다.',
