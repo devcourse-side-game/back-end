@@ -8,8 +8,6 @@ import {
 	ParseIntPipe,
 	Patch,
 	Delete,
-	UsePipes,
-	ValidationPipe,
 	Query,
 } from '@nestjs/common';
 import { PartiesService } from '../services/parties.service';
@@ -85,7 +83,6 @@ export class PartiesController {
 			},
 		},
 	})
-	@UsePipes(new ValidationPipe({ transform: true }))
 	createParty(
 		@Body() createPartyDto: CreatePartyDto,
 		@GetUser() user: { id: number },
@@ -132,7 +129,6 @@ export class PartiesController {
 		description: '수정된 파티 정보를 반환합니다.',
 		type: PartyWithMembersDto,
 	})
-	@UsePipes(new ValidationPipe({ transform: true }))
 	updateParty(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updatePartyDto: UpdatePartyDto,
@@ -193,12 +189,6 @@ export class PartiesController {
 	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
 	@ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호' })
 	@ApiQuery({ name: 'limit', required: false, type: Number, description: '페이지 당 개수' })
-	@UsePipes(
-		new ValidationPipe({
-			transform: true,
-			transformOptions: { enableImplicitConversion: true },
-		}),
-	)
 	async listParties(
 		@Query('gameId') gameId?: number,
 		@Query('isCompleted') isCompleted?: boolean,
