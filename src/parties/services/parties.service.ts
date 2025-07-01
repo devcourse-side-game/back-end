@@ -314,26 +314,6 @@ export class PartiesService {
 		});
 	}
 
-	async joinParty(partyId: number, userId: number): Promise<void> {
-		const exists = await this.partyMemberRepository.findOne({ where: { partyId, userId } });
-		if (exists) throw new AppException(ErrorCode.PARTY_ALREADY_JOINED);
-		const member = this.partyMemberRepository.create({ partyId, userId, isLeader: false });
-		await this.partyMemberRepository.save(member);
-	}
-
-	async leaveParty(partyId: number, userId: number): Promise<void> {
-		const member = await this.partyMemberRepository.findOne({ where: { partyId, userId } });
-		if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
-		await this.partyMemberRepository.remove(member);
-	}
-
-	async getPartyMembers(partyId: number): Promise<PartyMember[]> {
-		return this.partyMemberRepository.find({
-			where: { partyId },
-			relations: ['user'],
-		});
-	}
-
 	/**
 	 * 파티 완료 처리
 	 */
