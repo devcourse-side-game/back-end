@@ -75,7 +75,7 @@ export class PartyMembersService {
 				userGameProfile = queryRunner.manager.create(UserGameProfile, {
 					user,
 					game,
-					game_username: user.username,
+					gameUsername: user.username,
 				});
 				await queryRunner.manager.save(userGameProfile);
 			}
@@ -90,7 +90,7 @@ export class PartyMembersService {
 
 			await queryRunner.commitTransaction();
 			return { username: user.username };
-		} catch (error) {
+		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
 			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -120,7 +120,7 @@ export class PartyMembersService {
 			await queryRunner.commitTransaction();
 
 			return { username: member.user?.username || '' };
-		} catch (error) {
+		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
 			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -140,12 +140,13 @@ export class PartyMembersService {
 
 		const memberDtos: PartyMemberDto[] = await Promise.all(
 			members.map(async (member) => {
-				const userGameProfile = await this.userGameProfileRepository.findOne({
-					where: {
-						user: { id: member.userId },
-						game: { id: party.gameId },
-					},
-				});
+				const userGameProfile: UserGameProfile | null =
+					await this.userGameProfileRepository.findOne({
+						where: {
+							user: { id: member.userId },
+							game: { id: party.gameId },
+						},
+					});
 				return {
 					id: member.id,
 					userId: member.userId,
@@ -153,7 +154,7 @@ export class PartyMembersService {
 					isLeader: member.isLeader,
 					joinedAt: member.joinedAt?.toISOString(),
 					userGameProfile: userGameProfile
-						? { gameUsername: userGameProfile.game_username }
+						? { gameUsername: userGameProfile.gameUsername }
 						: { gameUsername: '' },
 				};
 			}),
@@ -199,7 +200,7 @@ export class PartyMembersService {
 			await queryRunner.commitTransaction();
 
 			return { username: member.user?.username || '' };
-		} catch (error) {
+		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
 			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
@@ -243,7 +244,7 @@ export class PartyMembersService {
 			await queryRunner.commitTransaction();
 
 			return { username: newLeader.user?.username || '' };
-		} catch (error) {
+		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
 			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);

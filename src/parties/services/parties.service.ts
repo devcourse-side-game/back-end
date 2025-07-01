@@ -250,7 +250,10 @@ export class PartiesService {
 					const userGameProfile = await this.userGameProfileRepository.findOne({
 						where: { user: { id: leader.user.id }, game: { id: party.gameId } },
 					});
-					leaderGameUsername = userGameProfile?.game_username || '';
+					leaderGameUsername =
+						userGameProfile && userGameProfile.gameUsername
+							? userGameProfile.gameUsername
+							: '';
 				}
 				const dto: import('../dto/response.dto').PartyListItemDto = {
 					id: party.id,
