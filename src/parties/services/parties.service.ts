@@ -86,7 +86,10 @@ export class PartiesService {
 				where: { id: newParty.id },
 				relations: ['creator', 'game', 'members', 'members.user'],
 			});
-			return this.toPartyWithMembersDto(createdParty!);
+			if (!createdParty) {
+				throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+			}
+			return this.toPartyWithMembersDto(createdParty);
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
