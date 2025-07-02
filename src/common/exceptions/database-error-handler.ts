@@ -7,16 +7,18 @@ export function handleDatabaseError(error: QueryFailedError): AppException {
   // QueryFailedError 처리
   if (error instanceof QueryFailedError) {
     const errorMessage = error.message || '';
+
+    console.log(errorMessage);
     
     // MySQL 유니크 제약 조건 위반 오류 처리
     if (errorMessage.includes('Duplicate entry')) {
       // email 중복 오류
-      if (errorMessage.includes('email')) {
+      if (errorMessage.includes('email || username')) {
         return new AppException(ErrorCode.USER_ALREADY_EXISTS);
       };
 
       // 기타 중복 오류
-      return new AppException(ErrorCode.DATABASE_ERROR, {
+      return new AppException(ErrorCode.USER_ALREADY_EXISTS, {
         originalError: process.env.NODE_ENV === 'production' ? undefined : errorMessage
       });
     }

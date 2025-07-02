@@ -19,6 +19,11 @@ export class AuthService {
 	async register(registerDto: RegisterDto) {
 		const { email, password, username } = registerDto;
 
+		const existingUser = await this.userRepository.findOneBy({ email });
+		if (existingUser) {
+			throw new ConflictException('이미 존재하는 이메일입니다.');
+		}
+
 		const hashedPassword = await bcrypt.hash(password, 10);
 		const user = await this.userRepository.create({
 			username: username,
@@ -26,8 +31,6 @@ export class AuthService {
 			password: hashedPassword,
 		})
 
-		// 중복 이메일, 유저명이 있다면 DB에러 발생 => 예외 처리 커스텀 필요
-		// 사전 검증 방식으로 전환하는 것을 고려할 수 있음
 		await this.userRepository.save(user);
 
 		return { message: '회원가입이 완료되었습니다.' };
