@@ -71,25 +71,27 @@ export class PartyMembersService {
 			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
 
 			// UserGameProfile 조회/생성
-			let userGameProfile;
+			let userGameProfile: { id: number } | null = null;
 			if (dto.profileId) {
-				userGameProfile = await this.userGameProfilesService.getUserGameProfileById(
+				const profile = await this.userGameProfilesService.getUserGameProfileById(
 					dto.profileId,
 					userId,
 					party.gameId,
 				);
-				if (!userGameProfile) {
+				if (!profile) {
 					throw new AppException(
 						ErrorCode.USER_GAME_PROFILE_NOT_FOUND,
 						'선택한 게임 프로필이 존재하지 않습니다.',
 					);
 				}
+				userGameProfile = { id: profile.id };
 			} else if (dto.gameUsername) {
-				userGameProfile = await this.userGameProfilesService.findOrCreateUserGameProfile(
+				const profile = await this.userGameProfilesService.findOrCreateUserGameProfile(
 					userId,
 					party.gameId,
 					dto.gameUsername,
 				);
+				userGameProfile = { id: profile.id };
 			} else {
 				// DTO에서 이미 검증하지만, 서비스 계층에서도 방어적으로 확인
 				throw new AppException(
@@ -98,7 +100,11 @@ export class PartyMembersService {
 				);
 			}
 
-			const newMember = this.partyMemberRepository.create({ partyId, userId });
+			const newMember = this.partyMemberRepository.create({
+				partyId,
+				userId,
+				userGameProfileId: userGameProfile?.id,
+			});
 			await queryRunner.manager.save(newMember);
 
 			await queryRunner.commitTransaction();
@@ -155,13 +161,25 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
-		const memberUserIds = members.map((m) => m.userId);
-		const userGameProfilesMap = await this.userGameProfilesService.getGameProfilesForUsers(
-			memberUserIds.map((userId) => ({ userId, gameId: party.gameId })),
-		);
+		// userGameProfileId가 있는 멤버들의 프로필을 한 번에 조회
+		const profileIdList = members
+			.map((m) => m.userGameProfileId)
+			.filter((id): id is number => !!id);
+		let profileMap: Map<number, string> = new Map();
+		if (profileIdList.length > 0) {
+			const profiles = await this.userGameProfilesService.getProfilesByIds(profileIdList);
+			profileMap = new Map(profiles.map((p) => [p.id, p.gameUsername]));
+		}
 
 		const memberDtos: PartyMemberDetailDto[] = members.map((member) => {
-			const gameUsername = userGameProfilesMap.get(`${member.userId}-${party.gameId}`) || '';
+			let gameUsername = '';
+			if (member.userGameProfileId) {
+				gameUsername = profileMap.get(member.userGameProfileId) || '';
+			}
+			// fallback: userGameProfileId가 없거나, 매칭되는 프로필이 없는 경우
+			if (!gameUsername) {
+				gameUsername = '';
+			}
 			return {
 				id: member.id,
 				userId: member.userId,

@@ -10,6 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Party } from './party.entity';
 import { User } from '../../users/entities/user.entity';
+import { UserGameProfile } from '../../user-game-profiles/entities/user-game-profile.entity';
 
 @Entity('PartyMembers')
 @Index('unique_party_user', ['partyId', 'userId'], { unique: true })
@@ -26,6 +27,10 @@ export class PartyMember {
 	@Column({ name: 'user_id' })
 	userId: number;
 
+	@ApiProperty({ example: 1, description: '사용자 게임 프로필 ID', required: false })
+	@Column({ name: 'user_game_profile_id', nullable: true })
+	userGameProfileId?: number;
+
 	@ManyToOne(() => Party, (party) => party.members, { onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'party_id' })
 	party: Party;
@@ -33,6 +38,10 @@ export class PartyMember {
 	@ManyToOne(() => User, { eager: true, onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'user_id' })
 	user: User;
+
+	@ManyToOne(() => UserGameProfile, { onDelete: 'CASCADE' })
+	@JoinColumn({ name: 'user_game_profile_id' })
+	userGameProfile?: UserGameProfile;
 
 	@ApiProperty({ example: false, description: '파티장 여부' })
 	@Column({ type: 'boolean', name: 'is_leader', default: false })

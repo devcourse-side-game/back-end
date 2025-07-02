@@ -1,3 +1,4 @@
+import { In } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +13,16 @@ export class UserGameProfilesService {
 		@InjectRepository(UserGameProfile)
 		private readonly userGameProfileRepository: Repository<UserGameProfile>,
 	) {}
+
+	/**
+	 * 여러 프로필 ID로 UserGameProfile 목록을 조회합니다.
+	 * @param profileIds number[]
+	 * @returns UserGameProfile[]
+	 */
+	async getProfilesByIds(profileIds: number[]): Promise<UserGameProfile[]> {
+		if (!profileIds.length) return [];
+		return this.userGameProfileRepository.find({ where: { id: In(profileIds) } });
+	}
 
 	async getUserGameProfiles(userId: number): Promise<UserGameProfileDto[]> {
 		const profiles = await this.userGameProfileRepository.find({
@@ -147,6 +158,13 @@ export class UserGameProfilesService {
 	): Promise<UserGameProfile | null> {
 		return this.userGameProfileRepository.findOne({
 			where: { id: profileId, userId, gameId },
+		});
+	}
+
+	// 새로운 메서드: profileId만으로 조회 (검증 없음)
+	async getProfileById(profileId: number): Promise<UserGameProfile | null> {
+		return this.userGameProfileRepository.findOne({
+			where: { id: profileId },
 		});
 	}
 }

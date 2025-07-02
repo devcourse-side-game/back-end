@@ -26,13 +26,21 @@ import { JoinPartyDto } from '../dto/join-party.dto';
 import { MemberListResponseDto } from '../dto/response.dto';
 
 @ApiTags('PartyMembers')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('parties/:partyId/members')
 export class PartyMembersController {
 	constructor(private readonly partyMembersService: PartyMembersService) {}
 
+	// 디버깅용 엔드포인트 (인증 없이 접근 가능)
+	@Get('debug')
+	@ApiOperation({ summary: '디버깅용 파티 멤버 조회 (인증 없음)' })
+	async debugGetPartyMembers(@Param('partyId', ParseIntPipe) partyId: number): Promise<any> {
+		console.log('🔥 DEBUG: debugGetPartyMembers called with partyId:', partyId);
+		return await this.partyMembersService.getPartyMembers(partyId);
+	}
+
 	@Post()
+	@ApiBearerAuth()
+	@UseGuards(JwtAuthGuard)
 	@ApiOperation({ summary: '파티 참가 (공개/비공개 통합)' })
 	@ApiOkResponse({
 		description: '파티에 참가했습니다.',
