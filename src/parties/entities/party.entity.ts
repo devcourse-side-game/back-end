@@ -13,7 +13,7 @@ import { Game } from '../../games/entities/game.entity';
 import { User } from '../../users/entities/user.entity';
 import { PartyMember } from './party-members.entity';
 
-@Entity('Parties')
+@Entity('parties')
 export class Party {
 	@PrimaryGeneratedColumn()
 	@ApiProperty({ example: 1, description: '파티 ID' })
