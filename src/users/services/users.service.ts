@@ -37,7 +37,7 @@ export class UsersService {
 				where: { username: updateUserDto.username },
 			});
 			if (existingUser && existingUser.id !== userId) {
-				throw new UnauthorizedException('이미 사용 중인 사용자 이름입니다.');
+				throw new ConflictException('이미 사용 중인 사용자 이름입니다.');
 			}
 			user.username = updateUserDto.username;
 		}
