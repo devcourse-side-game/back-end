@@ -12,10 +12,16 @@ import { User } from '../../users/entities/user.entity';
 import { Game } from '../../games/entities/game.entity';
 
 @Entity('UserGameProfiles')
-@Unique(['user', 'game'])
+@Unique(['userId', 'gameId'])
 export class UserGameProfile {
 	@PrimaryGeneratedColumn()
 	id: number;
+
+	@Column({ name: 'user_id' })
+	userId: number;
+
+	@Column({ name: 'game_id' })
+	gameId: number;
 
 	@ManyToOne(() => User)
 	@JoinColumn({ name: 'user_id' })

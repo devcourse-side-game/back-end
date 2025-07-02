@@ -6,9 +6,9 @@ import { Party } from '../entities/party.entity';
 import { User } from '../../users/entities/user.entity';
 import { AppException } from '../../common/exceptions/app.exception';
 import { ErrorCode } from '../../common/constants/error-codes';
-import { UserGameProfile } from '../entities/user-game-profile.entity';
 import { Game } from '../../games/entities/game.entity';
 import { MemberListResponseDto, PartyMemberDetailDto } from '../dto/response.dto';
+import { UserGameProfilesService } from '../../user-game-profiles/services/user-game-profiles.service';
 
 @Injectable()
 export class PartyMembersService {
@@ -19,8 +19,7 @@ export class PartyMembersService {
 		private readonly partyRepository: Repository<Party>,
 		@InjectRepository(User)
 		private readonly userRepository: Repository<User>,
-		@InjectRepository(UserGameProfile)
-		private readonly userGameProfileRepository: Repository<UserGameProfile>,
+		private readonly userGameProfilesService: UserGameProfilesService,
 		private readonly dataSource: DataSource,
 	) {}
 
@@ -71,20 +70,11 @@ export class PartyMembersService {
 			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
 
 			// UserGameProfile 조회/생성
-			let userGameProfile = await queryRunner.manager.findOne(UserGameProfile, {
-				where: {
-					user: { id: userId },
-					game: { id: party.gameId },
-				},
-			});
-			if (!userGameProfile) {
-				userGameProfile = queryRunner.manager.create(UserGameProfile, {
-					user,
-					game,
-					gameUsername: user.username,
-				});
-				await queryRunner.manager.save(userGameProfile);
-			}
+			await this.userGameProfilesService.findOrCreateUserGameProfile(
+				userId,
+				party.gameId,
+				user.username,
+			);
 
 			// 파티 멤버 추가 (DB 유니크 제약으로 중복 방지)
 			const member = queryRunner.manager.create(PartyMember, {
@@ -148,27 +138,22 @@ export class PartyMembersService {
 		const party = await this.partyRepository.findOne({ where: { id: partyId } });
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
-		const memberDtos: PartyMemberDetailDto[] = await Promise.all(
-			members.map(async (member) => {
-				const userGameProfile: UserGameProfile | null =
-					await this.userGameProfileRepository.findOne({
-						where: {
-							user: { id: member.userId },
-							game: { id: party.gameId },
-						},
-					});
-				return {
-					id: member.id,
-					userId: member.userId,
-					username: member.user?.username || '',
-					isLeader: member.isLeader,
-					joinedAt: member.joinedAt?.toISOString(),
-					userGameProfile: userGameProfile
-						? { gameUsername: userGameProfile.gameUsername }
-						: { gameUsername: '' },
-				};
-			}),
+		const memberUserIds = members.map((m) => m.userId);
+		const userGameProfilesMap = await this.userGameProfilesService.getGameProfilesForUsers(
+			memberUserIds.map((userId) => ({ userId, gameId: party.gameId })),
 		);
+
+		const memberDtos: PartyMemberDetailDto[] = members.map((member) => {
+			const gameUsername = userGameProfilesMap.get(`${member.userId}-${party.gameId}`) || '';
+			return {
+				id: member.id,
+				userId: member.userId,
+				username: member.user?.username || '',
+				isLeader: member.isLeader,
+				joinedAt: member.joinedAt?.toISOString(),
+				userGameProfile: { gameUsername },
+			};
+		});
 
 		return {
 			members: memberDtos,

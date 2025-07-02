@@ -4,21 +4,20 @@ import { ErrorCode } from '../../common/constants/error-codes';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Party } from '../entities/party.entity';
-import { UserGameProfile } from '../entities/user-game-profile.entity';
 import { Game } from '../../games/entities/game.entity';
 import { User } from '../../users/entities/user.entity';
 import { PartyMember } from '../entities/party-members.entity';
 import { CreatePartyDto } from '../dto/create-party.dto';
 import { UpdatePartyDto } from '../dto/update-party.dto';
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
+import { UserGameProfilesService } from '../../user-game-profiles/services/user-game-profiles.service';
 
 @Injectable()
 export class PartiesService {
 	constructor(
 		@InjectRepository(Party)
 		private readonly partyRepository: Repository<Party>,
-		@InjectRepository(UserGameProfile)
-		private readonly userGameProfileRepository: Repository<UserGameProfile>,
+		private readonly userGameProfilesService: UserGameProfilesService,
 		@InjectRepository(Game)
 		private readonly gameRepository: Repository<Game>,
 		@InjectRepository(User)
@@ -43,17 +42,11 @@ export class PartiesService {
 			const creator = await queryRunner.manager.findOneBy(User, { id: creatorId });
 			if (!creator) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
-			let userGameProfile = await queryRunner.manager.findOne(UserGameProfile, {
-				where: { user: { id: creatorId }, game: { id: dto.gameId } },
-			});
-			if (!userGameProfile) {
-				userGameProfile = queryRunner.manager.create(UserGameProfile, {
-					user: creator,
-					game: game,
-					gameUsername: creator.username,
-				});
-				await queryRunner.manager.save(userGameProfile);
-			}
+			await this.userGameProfilesService.findOrCreateUserGameProfile(
+				creatorId,
+				dto.gameId,
+				creator.username,
+			);
 
 			if (dto.isPrivate && !dto.accessCode) {
 				throw new AppException(
@@ -124,35 +117,8 @@ export class PartiesService {
 			.filter((m) => m.userId && party.gameId)
 			.map((m) => ({ userId: m.userId, gameId: party.gameId }));
 
-		let userGameProfilesMap = new Map<string, string>();
-		if (memberInfos.length > 0) {
-			const userGameProfiles = await this.userGameProfileRepository
-				.createQueryBuilder('profile')
-				.leftJoin('profile.user', 'user')
-				.leftJoin('profile.game', 'game')
-				.where(
-					memberInfos
-						.map((_, i) => `(user.id = :userId_${i} AND game.id = :gameId_${i})`)
-						.join(' OR '),
-				)
-				.setParameters(
-					memberInfos.reduce(
-						(params, info, i) => ({
-							...params,
-							[`userId_${i}`]: info.userId,
-							[`gameId_${i}`]: info.gameId,
-						}),
-						{},
-					),
-				)
-				.getMany();
-
-			userGameProfilesMap = new Map(
-				userGameProfiles
-					.filter((p) => p.user && p.game && p.user.id && p.game.id)
-					.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
-			);
-		}
+		const userGameProfilesMap =
+			await this.userGameProfilesService.getGameProfilesForUsers(memberInfos);
 
 		return this.toPartyWithMembersDto(party, userGameProfilesMap);
 	}
@@ -292,33 +258,8 @@ export class PartiesService {
 			})
 			.filter((info): info is { userId: number; gameId: number } => info !== null);
 
-		let userGameProfilesMap = new Map<string, string>();
-		if (leaderInfos.length > 0) {
-			const userGameProfiles = await this.userGameProfileRepository
-				.createQueryBuilder('profile')
-				.leftJoinAndSelect('profile.user', 'user')
-				.leftJoinAndSelect('profile.game', 'game')
-				.where(
-					leaderInfos
-						.map((_, i) => `(user.id = :userId_${i} AND game.id = :gameId_${i})`)
-						.join(' OR '),
-				)
-				.setParameters(
-					leaderInfos.reduce(
-						(params, info, i) => ({
-							...params,
-							[`userId_${i}`]: info.userId,
-							[`gameId_${i}`]: info.gameId,
-						}),
-						{},
-					),
-				)
-				.getMany();
-
-			userGameProfilesMap = new Map(
-				userGameProfiles.map((p) => [`${p.user.id}-${p.game.id}`, p.gameUsername]),
-			);
-		}
+		const userGameProfilesMap =
+			await this.userGameProfilesService.getGameProfilesForUsers(leaderInfos);
 
 		// 각 파티별 리더, 멤버 수, 게임 배너, 리더의 게임네임 포함 변환
 		return parties.map((party) => {
