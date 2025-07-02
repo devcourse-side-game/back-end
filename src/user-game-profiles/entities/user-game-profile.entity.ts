@@ -12,7 +12,7 @@ import { User } from '../../users/entities/user.entity';
 import { Game } from '../../games/entities/game.entity';
 
 @Entity('UserGameProfiles')
-@Unique(['userId', 'gameId'])
+@Unique(['userId', 'gameId', 'gameUsername'])
 export class UserGameProfile {
 	@PrimaryGeneratedColumn()
 	id: number;

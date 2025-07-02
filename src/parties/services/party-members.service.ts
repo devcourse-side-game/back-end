@@ -9,6 +9,7 @@ import { ErrorCode } from '../../common/constants/error-codes';
 import { Game } from '../../games/entities/game.entity';
 import { MemberListResponseDto, PartyMemberDetailDto } from '../dto/response.dto';
 import { UserGameProfilesService } from '../../user-game-profiles/services/user-game-profiles.service';
+import { JoinPartyDto } from '../dto/join-party.dto';
 
 @Injectable()
 export class PartyMembersService {
@@ -26,7 +27,7 @@ export class PartyMembersService {
 	async joinParty(
 		partyId: number,
 		userId: number,
-		accessCode?: string,
+		dto: JoinPartyDto,
 	): Promise<{ username: string }> {
 		const queryRunner = this.dataSource.createQueryRunner();
 		await queryRunner.connect();
@@ -44,7 +45,7 @@ export class PartyMembersService {
 
 			// 비공개 파티는 접근 코드 검증
 			if (party.isPrivate) {
-				if (!accessCode || party.accessCode !== accessCode) {
+				if (!dto.accessCode || party.accessCode !== dto.accessCode) {
 					throw new AppException(ErrorCode.PARTY_INVALID_ACCESS_CODE);
 				}
 			}
@@ -70,19 +71,35 @@ export class PartyMembersService {
 			if (!game) throw new AppException(ErrorCode.GAME_NOT_FOUND);
 
 			// UserGameProfile 조회/생성
-			await this.userGameProfilesService.findOrCreateUserGameProfile(
-				userId,
-				party.gameId,
-				user.username,
-			);
+			let userGameProfile;
+			if (dto.profileId) {
+				userGameProfile = await this.userGameProfilesService.getUserGameProfileById(
+					dto.profileId,
+					userId,
+					party.gameId,
+				);
+				if (!userGameProfile) {
+					throw new AppException(
+						ErrorCode.USER_GAME_PROFILE_NOT_FOUND,
+						'선택한 게임 프로필이 존재하지 않습니다.',
+					);
+				}
+			} else if (dto.gameUsername) {
+				userGameProfile = await this.userGameProfilesService.findOrCreateUserGameProfile(
+					userId,
+					party.gameId,
+					dto.gameUsername,
+				);
+			} else {
+				// DTO에서 이미 검증하지만, 서비스 계층에서도 방어적으로 확인
+				throw new AppException(
+					ErrorCode.VALIDATION_ERROR,
+					'게임 프로필 정보(profileId 또는 gameUsername)가 필요합니다.',
+				);
+			}
 
-			// 파티 멤버 추가 (DB 유니크 제약으로 중복 방지)
-			const member = queryRunner.manager.create(PartyMember, {
-				partyId,
-				userId,
-				isLeader: false,
-			});
-			await queryRunner.manager.save(member);
+			const newMember = this.partyMemberRepository.create({ partyId, userId });
+			await queryRunner.manager.save(newMember);
 
 			await queryRunner.commitTransaction();
 			return { username: user.username };

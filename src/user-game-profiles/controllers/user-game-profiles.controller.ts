@@ -17,6 +17,19 @@ export class UserGameProfilesController {
 		description: '사용자의 게임 프로필 목록',
 		type: [UserGameProfileDto],
 	})
+	@ApiResponse({
+		status: 404,
+		description: '프로필 없음',
+		schema: {
+			example: {
+				errorCode: 'ugp-001',
+				message: '사용자 게임 프로필을 찾을 수 없습니다.',
+				detail: '해당 사용자의 게임 프로필이 존재하지 않습니다.',
+				timestamp: '2025-07-02T12:00:00.000Z',
+				path: '/users/1/game-profiles/999',
+			},
+		},
+	})
 	@ApiParam({ name: 'userId', description: '사용자 ID', type: 'number' })
 	@Get()
 	async getUserGameProfiles(
@@ -25,11 +38,11 @@ export class UserGameProfilesController {
 		return this.userGameProfilesService.getUserGameProfiles(userId);
 	}
 
-	@ApiOperation({ summary: '특정 사용자의 특정 게임 프로필 조회' })
+	@ApiOperation({ summary: '특정 사용자의 특정 게임에 대한 모든 프로필 조회' })
 	@ApiResponse({
 		status: 200,
-		description: '사용자의 특정 게임 프로필',
-		type: UserGameProfileDto,
+		description: '사용자의 특정 게임에 대한 프로필 목록',
+		type: [UserGameProfileDto],
 	})
 	@ApiResponse({
 		status: 404,
@@ -47,10 +60,10 @@ export class UserGameProfilesController {
 	@ApiParam({ name: 'userId', description: '사용자 ID', type: 'number' })
 	@ApiParam({ name: 'gameId', description: '게임 ID', type: 'number' })
 	@Get(':gameId')
-	async getUserGameProfile(
+	async getUserGameProfilesByGame(
 		@Param('userId', ParseIntPipe) userId: number,
 		@Param('gameId', ParseIntPipe) gameId: number,
-	): Promise<UserGameProfileDto> {
-		return this.userGameProfilesService.getUserGameProfile(userId, gameId);
+	): Promise<UserGameProfileDto[]> {
+		return this.userGameProfilesService.getUserGameProfilesByGame(userId, gameId);
 	}
 }

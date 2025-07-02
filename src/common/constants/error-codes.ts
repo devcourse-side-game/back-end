@@ -38,6 +38,7 @@ export enum ErrorCode {
 	VALIDATION_ERROR = 'g-001',
 	DATABASE_ERROR = 'g-002',
 	INTERNAL_SERVER_ERROR = 'g-003',
+	FORBIDDEN = 'g-004', // 권한 없음
 }
 
 export const ERROR_DETAILS: Record<ErrorCode, ErrorDetails> = {
@@ -139,5 +140,11 @@ export const ERROR_DETAILS: Record<ErrorCode, ErrorDetails> = {
 	[ErrorCode.INTERNAL_SERVER_ERROR]: {
 		statusCode: 500,
 		message: '서버 내부 오류가 발생했습니다.',
+		detail: '요청을 처리하는 중에 예상치 못한 오류가 발생했습니다.',
+	},
+	[ErrorCode.FORBIDDEN]: {
+		statusCode: 403,
+		message: '요청을 수행할 권한이 없습니다.',
+		detail: '이 리소스에 접근하거나 이 작업을 수행할 권한이 없습니다.',
 	},
 };

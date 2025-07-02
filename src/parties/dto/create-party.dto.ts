@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-	IsBoolean,
 	IsInt,
-	IsNotEmpty,
-	IsOptional,
 	IsString,
-	MinLength,
+	IsOptional,
+	IsBoolean,
 	MaxLength,
 	Min,
 	ValidateIf,
+	IsNotEmpty,
+	MinLength,
 } from 'class-validator';
 
 export class CreatePartyDto {
@@ -23,7 +23,34 @@ export class CreatePartyDto {
 	@IsInt()
 	gameId: number;
 
-	@ApiProperty({ example: '레이드', description: '목적 태그', required: false })
+	@ApiProperty({
+		description:
+			'사용자의 기존 게임 프로필 ID. profileId와 gameUsername 중 하나는 필수이며, profileId가 우선적으로 사용됩니다.',
+		required: false,
+		nullable: true,
+	})
+	@IsOptional()
+	@IsInt()
+	@ValidateIf((o: CreatePartyDto) => !o.gameUsername)
+	@IsNotEmpty({ message: 'profileId 또는 gameUsername 중 하나는 필수입니다.' })
+	profileId?: number;
+
+	@ApiProperty({
+		description:
+			'새로 생성할 게임 프로필의 유저네임. profileId와 gameUsername 중 하나는 필수입니다.',
+		required: false,
+		nullable: true,
+	})
+	@IsOptional()
+	@IsString()
+	@ValidateIf((o: CreatePartyDto) => !o.profileId)
+	@IsNotEmpty({ message: 'profileId 또는 gameUsername 중 하나는 필수입니다.' })
+	gameUsername?: string;
+
+	@ApiProperty({
+		description: '파티 목적 태그',
+		required: false,
+	})
 	@IsOptional()
 	@IsString()
 	@MaxLength(50)

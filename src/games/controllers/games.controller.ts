@@ -31,7 +31,7 @@ export class GamesController {
 		const take = Math.min(Number(limit) || 20, 100);
 		const skip = Number(page) > 1 ? (Number(page) - 1) * take : 0;
 
-if (search) {
+		if (search) {
 			const searchNum = Number(search);
 			const or: import('typeorm').FindOptionsWhere<Game>[] = [
 				{ ...where, name: Like(`%${search}%`) },

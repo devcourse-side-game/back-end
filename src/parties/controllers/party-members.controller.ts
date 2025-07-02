@@ -70,13 +70,9 @@ export class PartyMembersController {
 	async joinParty(
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
-		@Body() dto?: JoinPartyDto,
+		@Body() dto: JoinPartyDto,
 	): Promise<{ message: string }> {
-		const { username } = await this.partyMembersService.joinParty(
-			partyId,
-			user.id,
-			dto?.accessCode,
-		);
+		const { username } = await this.partyMembersService.joinParty(partyId, user.id, dto);
 		return { message: `${username}님이 파티에 참가했습니다.` };
 	}
 

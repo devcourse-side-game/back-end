@@ -19,6 +19,10 @@ export class UserGameProfilesService {
 			relations: ['game'],
 		});
 
+		if (!profiles || profiles.length === 0) {
+			throw new AppException(ErrorCode.USER_GAME_PROFILE_NOT_FOUND);
+		}
+
 		return profiles.map((profile) => {
 			const dto = new UserGameProfileDto();
 			dto.id = profile.id;
@@ -30,9 +34,13 @@ export class UserGameProfilesService {
 		});
 	}
 
-	async getUserGameProfile(userId: number, gameId: number): Promise<UserGameProfileDto> {
+	async getUserGameProfileByUsername(
+		userId: number,
+		gameId: number,
+		gameUsername: string,
+	): Promise<UserGameProfileDto> {
 		const profile = await this.userGameProfileRepository.findOne({
-			where: { userId, gameId },
+			where: { userId, gameId, gameUsername },
 			relations: ['game'],
 		});
 
@@ -49,20 +57,49 @@ export class UserGameProfilesService {
 		return dto;
 	}
 
+	async getUserGameProfilesByGame(userId: number, gameId: number): Promise<UserGameProfileDto[]> {
+		const profiles = await this.userGameProfileRepository.find({
+			where: { userId, gameId },
+			relations: ['game'],
+		});
+
+		if (!profiles || profiles.length === 0) {
+			throw new AppException(ErrorCode.USER_GAME_PROFILE_NOT_FOUND);
+		}
+
+		return profiles.map((profile) => {
+			const dto = new UserGameProfileDto();
+			dto.id = profile.id;
+			dto.userId = profile.userId;
+			dto.gameId = profile.gameId;
+			dto.gameUsername = profile.gameUsername;
+			dto.game = profile.game;
+			return dto;
+		});
+	}
+
 	async findOrCreateUserGameProfile(
 		userId: number,
 		gameId: number,
 		username: string,
 	): Promise<UserGameProfile> {
+		if (!username || username.trim() === '') {
+			throw new AppException(
+				ErrorCode.VALIDATION_ERROR,
+				'게임 프로필 username이 필요합니다.',
+			);
+		}
+
+		// 동일한 userId, gameId, gameUsername 조합이 있는지 확인
 		let userGameProfile = await this.userGameProfileRepository.findOne({
-			where: { userId, gameId },
+			where: { userId, gameId, gameUsername: username },
 		});
 
 		if (!userGameProfile) {
 			userGameProfile = this.userGameProfileRepository.create({
 				userId,
 				gameId,
-				gameUsername: username, // 기본값으로 유저네임 사용
+				gameUsername: username,
 			});
 			await this.userGameProfileRepository.save(userGameProfile);
 		}
@@ -100,5 +137,16 @@ export class UserGameProfilesService {
 			.getMany();
 
 		return new Map(userGameProfiles.map((p) => [`${p.userId}-${p.gameId}`, p.gameUsername]));
+	}
+
+	// UserGameProfilesService에 추가: ID로 프로필 조회 (userId, gameId 일치까지 검증)
+	async getUserGameProfileById(
+		profileId: number,
+		userId: number,
+		gameId: number,
+	): Promise<UserGameProfile | null> {
+		return this.userGameProfileRepository.findOne({
+			where: { id: profileId, userId, gameId },
+		});
 	}
 }

@@ -33,7 +33,7 @@ export class UsersController {
 	async getProfile(@GetUser() jwtPayload: JwtPayload) {
 		const userId = jwtPayload.id; // JWT에서 추출된 사용자 ID
 		const user = await this.usersService.findById(userId);
-		
+
 		// 비밀번호 필드 제외하고 반환
 		const { password, ...userWithoutPassword } = user;
 		return userWithoutPassword;
@@ -66,7 +66,10 @@ export class UsersController {
 		type: UsersErrorResponseDto,
 	})
 	@ApiResponse({ status: 404, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
-	async changePassword(@GetUser() jwtPayload: JwtPayload, @Body() changePasswordDto: ChangePasswordDto) {
+	async changePassword(
+		@GetUser() jwtPayload: JwtPayload,
+		@Body() changePasswordDto: ChangePasswordDto,
+	) {
 		const userId = jwtPayload.id; // JWT에서 추출된 사용자 ID
 		await this.usersService.changePassword(userId, changePasswordDto);
 		return { message: '비밀번호가 성공적으로 변경되었습니다.' };

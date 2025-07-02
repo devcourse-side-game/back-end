@@ -42,11 +42,31 @@ export class PartiesService {
 			const creator = await queryRunner.manager.findOneBy(User, { id: creatorId });
 			if (!creator) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
-			await this.userGameProfilesService.findOrCreateUserGameProfile(
-				creatorId,
-				dto.gameId,
-				creator.username,
-			);
+			let userGameProfile;
+			if (dto.profileId) {
+				userGameProfile = await this.userGameProfilesService.getUserGameProfileById(
+					dto.profileId,
+					creatorId,
+					dto.gameId,
+				);
+				if (!userGameProfile) {
+					throw new AppException(
+						ErrorCode.USER_GAME_PROFILE_NOT_FOUND,
+						'선택한 게임 프로필이 존재하지 않습니다.',
+					);
+				}
+			} else if (dto.gameUsername) {
+				userGameProfile = await this.userGameProfilesService.findOrCreateUserGameProfile(
+					creatorId,
+					dto.gameId,
+					dto.gameUsername,
+				);
+			} else {
+				throw new AppException(
+					ErrorCode.VALIDATION_ERROR,
+					'게임 프로필 정보(profileId 또는 gameUsername)가 필요합니다.',
+				);
+			}
 
 			if (dto.isPrivate && !dto.accessCode) {
 				throw new AppException(
@@ -91,7 +111,19 @@ export class PartiesService {
 				);
 			}
 
-			return this.toPartyWithMembersDto(createdParty);
+			// 리더의 게임 프로필을 명확히 조회하여 맵에 포함
+			const leaderUserId = creatorId;
+			const leaderGameId = dto.gameId;
+			const leaderProfile = userGameProfile as { gameUsername: string };
+			const userGameProfilesMap = new Map<string, string>();
+			if (leaderProfile && leaderProfile.gameUsername) {
+				userGameProfilesMap.set(
+					`${leaderUserId}-${leaderGameId}`,
+					leaderProfile.gameUsername,
+				);
+			}
+
+			return this.toPartyWithMembersDto(createdParty, userGameProfilesMap);
 		} catch (error) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
@@ -185,34 +217,90 @@ export class PartiesService {
 		dto: UpdatePartyDto,
 		userId: number,
 	): Promise<PartyWithMembersDto> {
-		const party = await this.partyRepository.findOne({
-			where: { id: partyId },
-			relations: ['creator', 'game', 'members', 'members.user'],
-		});
-		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
-		if (party.creatorId !== userId) {
-			throw new AppException(ErrorCode.PARTY_NOT_CREATOR);
+		const queryRunner = this.dataSource.createQueryRunner();
+		await queryRunner.connect();
+		await queryRunner.startTransaction();
+
+		try {
+			const party = await queryRunner.manager.findOne(Party, {
+				where: { id: partyId },
+				relations: ['creator', 'game', 'members', 'members.user'],
+			});
+
+			if (!party) {
+				throw new AppException(ErrorCode.PARTY_NOT_FOUND);
+			}
+
+			if (party.creatorId !== userId) {
+				throw new AppException(ErrorCode.FORBIDDEN, '파티를 수정할 권한이 없습니다.');
+			}
+
+			// 호스트 게임 프로필 업데이트 로직
+			if (dto.profileId) {
+				const profile = await this.userGameProfilesService.getUserGameProfileById(
+					dto.profileId,
+					userId,
+					party.gameId,
+				);
+				if (!profile) {
+					throw new AppException(
+						ErrorCode.USER_GAME_PROFILE_NOT_FOUND,
+						'선택한 게임 프로필이 유효하지 않습니다.',
+					);
+				}
+			} else if (dto.gameUsername) {
+				// 새로운 gameUsername으로 프로필 생성 (기존 프로필은 유지)
+				await this.userGameProfilesService.findOrCreateUserGameProfile(
+					userId,
+					party.gameId,
+					dto.gameUsername,
+				);
+			}
+
+			// 파티 정보 업데이트
+			Object.assign(party, {
+				...dto,
+				accessCode: dto.isPrivate ? dto.accessCode : undefined,
+			});
+
+			if (party.isPrivate && !party.accessCode) {
+				throw new AppException(
+					ErrorCode.VALIDATION_ERROR,
+					'비공개 파티는 참여 코드가 필요합니다.',
+				);
+			}
+
+			await queryRunner.manager.save(party);
+
+			const updatedParty = await queryRunner.manager.findOne(Party, {
+				where: { id: party.id },
+				relations: ['creator', 'game', 'members', 'members.user'],
+			});
+
+			await queryRunner.commitTransaction();
+
+			if (!updatedParty) {
+				throw new AppException(
+					ErrorCode.PARTY_NOT_FOUND,
+					'파티 업데이트 후 조회에 실패했습니다.',
+				);
+			}
+
+			const memberInfos = (updatedParty.members || [])
+				.filter((m) => m.userId && updatedParty.gameId)
+				.map((m) => ({ userId: m.userId, gameId: updatedParty.gameId }));
+
+			const userGameProfilesMap =
+				await this.userGameProfilesService.getGameProfilesForUsers(memberInfos);
+
+			return this.toPartyWithMembersDto(updatedParty, userGameProfilesMap);
+		} catch (error) {
+			await queryRunner.rollbackTransaction();
+			if (error instanceof AppException) throw error;
+			throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+		} finally {
+			await queryRunner.release();
 		}
-
-		// 비공개 파티로 전환 시 accessCode는 필수
-		if (dto.isPrivate === true && !dto.accessCode) {
-			throw new AppException(
-				ErrorCode.VALIDATION_ERROR,
-				'비공개 파티는 참여 코드가 필요합니다.',
-			);
-		}
-
-		Object.assign(party, {
-			title: dto.title ?? party.title,
-			purposeTag: dto.purposeTag ?? party.purposeTag,
-			maxParticipants: dto.maxParticipants ?? party.maxParticipants,
-			description: dto.description ?? party.description,
-			isPrivate: dto.isPrivate ?? party.isPrivate,
-			accessCode: dto.isPrivate === false ? undefined : (dto.accessCode ?? party.accessCode),
-		});
-
-		const updatedParty = await this.partyRepository.save(party);
-		return this.toPartyWithMembersDto(updatedParty);
 	}
 
 	/**

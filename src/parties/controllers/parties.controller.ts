@@ -129,6 +129,49 @@ export class PartiesController {
 		description: '수정된 파티 정보를 반환합니다.',
 		type: PartyWithMembersDto,
 	})
+	@ApiBadRequestResponse({
+		description: '잘못된 요청 데이터입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'g-001',
+				message: '입력 데이터가 유효하지 않습니다.',
+				detail: 'profileId 또는 gameUsername 중 하나만 입력해야 합니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({ description: '인증이 필요합니다.' })
+	@ApiForbiddenResponse({
+		description: '권한이 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 403,
+				errorCode: 'g-004',
+				message: '요청을 수행할 권한이 없습니다.',
+				detail: '파티를 수정할 권한이 없습니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티 또는 게임 프로필을 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
 	updateParty(
 		@Param('id', ParseIntPipe) id: number,
 		@Body() updatePartyDto: UpdatePartyDto,
