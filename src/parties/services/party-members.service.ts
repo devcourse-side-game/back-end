@@ -201,9 +201,6 @@ export class PartyMembersService {
 				gameUsername = profileMap.get(member.userGameProfileId) || '';
 			}
 			// fallback: userGameProfileId가 없거나, 매칭되는 프로필이 없는 경우
-			if (!gameUsername) {
-				gameUsername = '';
-			}
 			return {
 				id: member.id,
 				userId: member.userId,
