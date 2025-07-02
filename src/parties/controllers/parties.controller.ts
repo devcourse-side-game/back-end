@@ -42,6 +42,39 @@ export class PartiesController {
 	@ApiCreatedResponse({
 		description: '파티가 성공적으로 생성되었습니다.',
 		type: PartyWithMembersDto,
+		schema: {
+			example: {
+				id: 29,
+				title: '새로운 파티',
+				gameId: 1,
+				gameName: 'Dedicated Server',
+				creatorId: 5,
+				purposeTag: '레이드',
+				maxParticipants: 8,
+				description: '파티 설명',
+				isPrivate: false,
+				isCompleted: false,
+				createdAt: '2025-07-02T12:00:00.000Z',
+				updatedAt: '2025-07-02T12:00:00.000Z',
+				creator: {
+					id: 5,
+					username: 'testuser',
+					email: 'testuser1@example.com',
+					profileImage: null,
+				},
+				members: [
+					{
+						id: 15,
+						userId: 5,
+						username: 'testuser',
+						isLeader: true,
+						joinedAt: '2025-07-02T12:00:00.000Z',
+						leftAt: null,
+						gameUsername: 'test1',
+					},
+				],
+			},
+		},
 	})
 	@ApiBadRequestResponse({
 		description: '잘못된 요청 데이터입니다.',
@@ -92,7 +125,52 @@ export class PartiesController {
 
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
-	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
+	@ApiOkResponse({
+		description: '파티 + 멤버 정보를 반환합니다.',
+		type: PartyWithMembersDto,
+		schema: {
+			example: {
+				id: 26,
+				title: '파티 제목',
+				gameId: 1,
+				gameName: 'Dedicated Server',
+				creatorId: 5,
+				purposeTag: '레이드',
+				maxParticipants: 8,
+				description: '파티 설명',
+				isPrivate: false,
+				isCompleted: false,
+				createdAt: '2025-07-01T21:56:03.700Z',
+				updatedAt: '2025-07-01T21:56:03.700Z',
+				creator: {
+					id: 5,
+					username: 'testuser',
+					email: 'testuser1@example.com',
+					profileImage: null,
+				},
+				members: [
+					{
+						id: 1,
+						userId: 5,
+						username: 'testuser',
+						isLeader: false,
+						joinedAt: '2025-07-01T22:30:28.685Z',
+						leftAt: null,
+						gameUsername: 'test1',
+					},
+					{
+						id: 13,
+						userId: 8,
+						username: 'testuser2',
+						isLeader: false,
+						joinedAt: '2025-07-01T22:47:11.031Z',
+						leftAt: null,
+						gameUsername: '5452',
+					},
+				],
+			},
+		},
+	})
 	@ApiUnauthorizedResponse({
 		description: '인증이 필요합니다.',
 		schema: {
@@ -128,6 +206,48 @@ export class PartiesController {
 	@ApiOkResponse({
 		description: '수정된 파티 정보를 반환합니다.',
 		type: PartyWithMembersDto,
+		schema: {
+			example: {
+				id: 26,
+				title: '수정된 파티 제목',
+				gameId: 1,
+				gameName: 'Dedicated Server',
+				creatorId: 5,
+				purposeTag: '친선전',
+				maxParticipants: 6,
+				description: '수정된 파티 설명',
+				isPrivate: false,
+				isCompleted: false,
+				createdAt: '2025-07-01T21:56:03.700Z',
+				updatedAt: '2025-07-02T12:00:00.000Z',
+				creator: {
+					id: 5,
+					username: 'testuser',
+					email: 'testuser1@example.com',
+					profileImage: null,
+				},
+				members: [
+					{
+						id: 1,
+						userId: 5,
+						username: 'testuser',
+						isLeader: true,
+						joinedAt: '2025-07-01T22:30:28.685Z',
+						leftAt: null,
+						gameUsername: 'test1',
+					},
+					{
+						id: 13,
+						userId: 8,
+						username: 'testuser2',
+						isLeader: false,
+						joinedAt: '2025-07-01T22:47:11.031Z',
+						leftAt: null,
+						gameUsername: '5452',
+					},
+				],
+			},
+		},
 	})
 	@ApiBadRequestResponse({
 		description: '잘못된 요청 데이터입니다.',
@@ -203,26 +323,44 @@ export class PartiesController {
 		schema: {
 			example: [
 				{
-					id: 1,
-					title: '같이 즐겁게 게임해요',
+					id: 28,
+					title: '파티 제목',
 					gameId: 1,
+					gameName: 'Dota 2',
 					gameBannerUrl:
-						'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
-					creatorId: 1,
+						'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					creatorId: 8,
 					purposeTag: '레이드',
 					maxParticipants: 8,
 					description: '파티 설명',
 					isPrivate: false,
-					accessCode: null,
 					isCompleted: false,
-					createdAt: '2025-06-10T18:00:00',
-					updatedAt: '2025-06-10T18:00:00',
+					createdAt: '2025-07-01T23:16:56.784Z',
+					updatedAt: '2025-07-01T23:16:56.784Z',
+					leader: null,
+					currentMemberCount: 0,
+				},
+				{
+					id: 27,
+					title: '파티 제목',
+					gameId: 1,
+					gameName: 'Dota 2',
+					gameBannerUrl:
+						'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					creatorId: 8,
+					purposeTag: '레이드',
+					maxParticipants: 8,
+					description: '파티 설명',
+					isPrivate: false,
+					isCompleted: false,
+					createdAt: '2025-07-01T23:02:14.038Z',
+					updatedAt: '2025-07-01T23:02:14.038Z',
 					leader: {
-						userId: 1,
-						username: 'user1',
-						gameUsername: 'pro_gamer123',
+						userId: 8,
+						username: 'testuser2',
+						gameUsername: 'test1',
 					},
-					currentMemberCount: 3,
+					currentMemberCount: 1,
 				},
 			],
 		},

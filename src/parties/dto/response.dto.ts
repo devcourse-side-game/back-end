@@ -22,6 +22,9 @@ export class PartyListItemDto {
 	@ApiProperty({ example: 1, description: '게임 ID' })
 	gameId: number;
 
+	@ApiProperty({ example: 'Dota 2', description: '게임 이름' })
+	gameName: string;
+
 	@ApiProperty({
 		example: 'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
 		description: '게임 배너 이미지 URL',

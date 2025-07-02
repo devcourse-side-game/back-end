@@ -125,7 +125,28 @@ export class PartyMembersController {
 	@Get()
 	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 멤버 목록 조회' })
-	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.' })
+	@ApiOkResponse({
+		description: '파티 멤버 목록을 반환합니다.',
+		type: MemberListResponseDto,
+		schema: {
+			example: {
+				members: [
+					{
+						id: 1,
+						userId: 8,
+						username: 'testuser2',
+						isLeader: true,
+						joinedAt: '2025-07-01T23:02:14.038Z',
+						userGameProfile: {
+							gameUsername: 'test1',
+						},
+					},
+				],
+				partyId: 27,
+				partyTitle: '파티 제목',
+			},
+		},
+	})
 	@ApiUnauthorizedResponse({
 		description: '인증이 필요합니다.',
 		schema: { example: { statusCode: 401, message: 'Unauthorized' } },

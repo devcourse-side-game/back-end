@@ -176,11 +176,13 @@ export class PartiesService {
 			updatedAt,
 			creator,
 			members,
+			game,
 		} = party;
 		return {
 			id,
 			title,
 			gameId,
+			gameName: game && game.name ? game.name : '',
 			creatorId,
 			purposeTag,
 			maxParticipants,
@@ -361,6 +363,7 @@ export class PartiesService {
 				id: party.id,
 				title: party.title,
 				gameId: party.gameId,
+				gameName: party.game?.name || '',
 				gameBannerUrl: party.game?.bannerUrl || '',
 				creatorId: party.creatorId,
 				purposeTag: party.purposeTag,

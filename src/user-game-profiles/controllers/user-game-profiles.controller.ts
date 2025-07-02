@@ -16,6 +16,34 @@ export class UserGameProfilesController {
 		status: 200,
 		description: '사용자의 게임 프로필 목록',
 		type: [UserGameProfileDto],
+		schema: {
+			example: [
+				{
+					id: 1,
+					userId: 8,
+					gameId: 1,
+					gameUsername: 'test1',
+					game: {
+						id: 1,
+						name: 'Dota 2',
+						bannerUrl:
+							'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					},
+				},
+				{
+					id: 2,
+					userId: 8,
+					gameId: 1,
+					gameUsername: 'test2',
+					game: {
+						id: 1,
+						name: 'Dota 2',
+						bannerUrl:
+							'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					},
+				},
+			],
+		},
 	})
 	@ApiResponse({
 		status: 404,
@@ -43,6 +71,34 @@ export class UserGameProfilesController {
 		status: 200,
 		description: '사용자의 특정 게임에 대한 프로필 목록',
 		type: [UserGameProfileDto],
+		schema: {
+			example: [
+				{
+					id: 1,
+					userId: 8,
+					gameId: 1,
+					gameUsername: 'test1',
+					game: {
+						id: 1,
+						name: 'Dota 2',
+						bannerUrl:
+							'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					},
+				},
+				{
+					id: 2,
+					userId: 8,
+					gameId: 1,
+					gameUsername: 'test2',
+					game: {
+						id: 1,
+						name: 'Dota 2',
+						bannerUrl:
+							'https://cdn.cloudflare.steamstatic.com/steam/apps/3609070/header.jpg',
+					},
+				},
+			],
+		},
 	})
 	@ApiResponse({
 		status: 404,
