@@ -24,19 +24,13 @@ import { GetUser } from '../../auth/decorator/get-user.decorator';
 import { PartyMembersService } from '../services/party-members.service';
 import { JoinPartyDto } from '../dto/join-party.dto';
 import { MemberListResponseDto } from '../dto/response.dto';
+import { AppException } from 'src/common/exceptions/app.exception';
+import { ErrorCode } from 'src/common/constants/error-codes';
 
 @ApiTags('PartyMembers')
 @Controller('parties/:partyId/members')
 export class PartyMembersController {
 	constructor(private readonly partyMembersService: PartyMembersService) {}
-
-	// 디버깅용 엔드포인트 (인증 없이 접근 가능)
-	@Get('debug')
-	@ApiOperation({ summary: '디버깅용 파티 멤버 조회 (인증 없음)' })
-	async debugGetPartyMembers(@Param('partyId', ParseIntPipe) partyId: number): Promise<any> {
-		console.log('🔥 DEBUG: debugGetPartyMembers called with partyId:', partyId);
-		return await this.partyMembersService.getPartyMembers(partyId);
-	}
 
 	@Post()
 	@ApiBearerAuth()
@@ -85,6 +79,8 @@ export class PartyMembersController {
 	}
 
 	@Delete('/me')
+	@ApiBearerAuth()
+	@UseGuards(JwtAuthGuard)
 	@ApiOperation({ summary: '파티 탈퇴' })
 	@ApiOkResponse({
 		description: '파티에서 탈퇴했습니다.',
@@ -118,11 +114,16 @@ export class PartyMembersController {
 		@Param('partyId', ParseIntPipe) partyId: number,
 		@GetUser() user: { id: number },
 	): Promise<{ message: string }> {
+		if (!user || !user.id) {
+			// @GetUser() 데코레이터가 어떤 이유로든 유효한 user 객체를 반환하지 못하는 경우에 대한 방어 코드
+			throw new AppException(ErrorCode.UNAUTHORIZED);
+		}
 		const { username } = await this.partyMembersService.leaveParty(partyId, user.id);
 		return { message: `${username}님이 파티에서 탈퇴했습니다.` };
 	}
 
 	@Get()
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 멤버 목록 조회' })
 	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.' })
 	@ApiUnauthorizedResponse({

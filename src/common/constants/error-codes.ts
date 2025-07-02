@@ -15,6 +15,7 @@ export enum ErrorCode {
 	// 인증 관련 오류 (a-xxx)
 	USER_NOT_FOUND = 'a-001', // 존재하지 않는 아이디
 	INVALID_PASSWORD = 'a-002', // 비밀번호 불일치
+	UNAUTHORIZED = 'a-003', // 인증되지 않은 사용자
 
 	// 파티 관련 오류 (p-xxx)
 	PARTY_NOT_FOUND = 'p-001', // 파티를 찾을 수 없음
@@ -62,6 +63,11 @@ export const ERROR_DETAILS: Record<ErrorCode, ErrorDetails> = {
 		statusCode: 400,
 		message: '비밀번호가 일치하지 않습니다.',
 		detail: '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+	},
+	[ErrorCode.UNAUTHORIZED]: {
+		statusCode: 401,
+		message: '인증이 필요합니다.',
+		detail: '이 작업을 수행하려면 로그인이 필요합니다.',
 	},
 
 	// 파티 관련 오류

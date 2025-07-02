@@ -139,10 +139,34 @@ export class PartyMembersService {
 				throw new AppException(ErrorCode.PARTY_LEADER_CANNOT_LEAVE);
 			}
 
+			// userId가 undefined/null이면 DB row가 손상된 상태이므로 즉시 예외
+			if (typeof member.userId !== 'number' || !member.userId) {
+				throw new AppException(
+					ErrorCode.INTERNAL_SERVER_ERROR,
+					'PartyMember row의 userId가 유효하지 않습니다.',
+				);
+			}
+
+			let username = '';
+			if (member.user && member.user.username) {
+				username = member.user.username;
+			} else {
+				// user relation이 undefined인 경우 직접 조회
+				const user = await queryRunner.manager.findOne(User, {
+					where: { id: member.userId },
+				});
+				if (!user) {
+					throw new AppException(
+						ErrorCode.USER_NOT_FOUND,
+						'PartyMember의 userId에 해당하는 사용자가 존재하지 않습니다.',
+					);
+				}
+				username = user.username;
+			}
+
 			await queryRunner.manager.remove(member);
 			await queryRunner.commitTransaction();
-
-			return { username: member.user?.username || '' };
+			return { username };
 		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
@@ -226,10 +250,22 @@ export class PartyMembersService {
 			});
 			if (!member) throw new AppException(ErrorCode.PARTY_MEMBER_NOT_FOUND);
 
+			let username = '';
+			if (member.user && member.user.username) {
+				username = member.user.username;
+			} else if (member.userId) {
+				// user relation이 undefined인 경우 직접 조회
+				const user = await queryRunner.manager.findOne(User, {
+					where: { id: member.userId },
+				});
+				// 방어 코드: user가 없을 경우에도 대비
+				username = user?.username || '';
+			}
+
 			await queryRunner.manager.remove(member);
 			await queryRunner.commitTransaction();
 
-			return { username: member.user?.username || '' };
+			return { username };
 		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
@@ -271,9 +307,21 @@ export class PartyMembersService {
 			leader.isLeader = false;
 			newLeader.isLeader = true;
 			await queryRunner.manager.save([leader, newLeader]);
+
+			let username = '';
+			if (newLeader.user && newLeader.user.username) {
+				username = newLeader.user.username;
+			} else if (newLeader.userId) {
+				// user relation이 undefined인 경우 직접 조회
+				const user = await queryRunner.manager.findOne(User, {
+					where: { id: newLeader.userId },
+				});
+				username = user?.username || '';
+			}
+
 			await queryRunner.commitTransaction();
 
-			return { username: newLeader.user?.username || '' };
+			return { username };
 		} catch (error: unknown) {
 			await queryRunner.rollbackTransaction();
 			if (error instanceof AppException) throw error;
