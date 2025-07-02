@@ -78,7 +78,7 @@ export class PartyMembersController {
 		return { message: `${username}님이 파티에 참가했습니다.` };
 	}
 
-	@Delete('/me')
+	@Delete()
 	@ApiBearerAuth()
 	@UseGuards(JwtAuthGuard)
 	@ApiOperation({ summary: '파티 탈퇴' })
