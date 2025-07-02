@@ -1,6 +1,8 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
 import { QueryFailedError } from "typeorm";
 import { handleDatabaseError } from "../exceptions/database-error-handler";
+import { AppException } from "../exceptions/app.exception";
+import { ErrorCode } from "../constants/error-codes";
 
 @Catch(HttpException, QueryFailedError, Error)
 export class AppExceptionFilter implements ExceptionFilter {

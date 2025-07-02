@@ -9,6 +9,10 @@ export enum ErrorCode {
     // 인증 관련 오류 (a-xxx)
     USER_NOT_FOUND = 'a-001', // 존재하지 않는 아이디
     INVALID_PASSWORD = 'a-002', // 비밀번호 불일치
+    ACCESS_TOKEN_EXPIRED = 'a-003', // 액세스 토큰 만료
+    REFRESH_TOKEN_EXPIRED = 'a-004', // 리프레시 토큰 만료
+    REFRESH_TOKEN_INVALID = 'a-005', // 유효하지 않은 리프레시 토큰
+    UNAUTHORIZED = 'a-006', // 인증되지 않은 접근
     
     // 일반 오류 (g-xxx)
     VALIDATION_ERROR = 'g-001',
@@ -49,6 +53,26 @@ export enum ErrorCode {
       statusCode: 400,
       message: '비밀번호가 일치하지 않습니다.',
       detail: '비밀번호와 비밀번호 확인이 일치하지 않습니다.'
+    },
+    [ErrorCode.ACCESS_TOKEN_EXPIRED]: {
+      statusCode: 401,
+      message: '액세스 토큰이 만료되었습니다.',
+      detail: '리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받으세요.'
+    },
+    [ErrorCode.REFRESH_TOKEN_EXPIRED]: {
+      statusCode: 401,
+      message: '리프레시 토큰이 만료되었습니다.',
+      detail: '다시 로그인해주세요.'
+    },
+    [ErrorCode.REFRESH_TOKEN_INVALID]: {
+      statusCode: 401,
+      message: '유효하지 않은 리프레시 토큰입니다.',
+      detail: '다시 로그인해주세요.'
+    },
+    [ErrorCode.UNAUTHORIZED]: {
+      statusCode: 401,
+      message: '인증에 실패했습니다.',
+      detail: '유효한 인증 정보가 필요합니다.'
     },
     
     // 일반 오류
