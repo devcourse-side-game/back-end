@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Post, Query, Res, Req, UseGuards } from '@nestjs/common';
+import { Response, Request } from 'express';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
 	LoginDto,
@@ -17,6 +17,9 @@ import {
 } from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetUser } from '../decorator/get-user.decorator';
+import { AppException } from 'src/common/exceptions/app.exception';
+import { ErrorCode } from 'src/common/constants/error-codes';
+import { ref } from 'process';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,6 +36,7 @@ export class AuthController {
 	}
 
 	@Post('login')
+	@HttpCode(200)
 	@ApiOperation({ summary: '로그인', description: '사용자 인증 및 토큰 발급' })
 	@ApiResponse({ status: 200, description: '로그인 성공', type: LoginResponseDto })
 	@ApiResponse({ status: 401, description: '인증 실패', type: AuthErrorResponseDto })
@@ -44,7 +48,7 @@ export class AuthController {
 			secure: false,
 			path: '/api/auth/refresh',
 			sameSite: 'strict',
-			maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '604800')
+			maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
 		});
 
 		return { message: '로그인 성공', accessToken };
@@ -61,12 +65,18 @@ export class AuthController {
 	}
 	
 	@Post('refresh')
+	@HttpCode(200)
 	@ApiOperation({ summary: '액세스 토큰 갱신', description: '리프레시 토큰을 사용하여 새 액세스 토큰 발급' })
 	@ApiResponse({ status: 200, description: '토큰 갱신 성공', type: RefreshTokenResponseDto })
 	@ApiResponse({ status: 401, description: '리프레시 토큰 유효하지 않음', type: TokenErrorResponseDto })
-	@ApiHeader({ name: 'WWW-Authenticate', description: '오류 유형 정보를 포함하는 헤더' })
-	async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-		return await this.authService.refreshAccessToken(refreshTokenDto);
+	@ApiCookieAuth('refreshToken')
+	async refreshToken(@Req() req: Request) {
+		const refreshToken = req.cookies?.refreshToken;
+		if (!refreshToken) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+		return await this.authService.refreshAccessToken({refreshToken});
 	}
 
 	@Get('nicknameCheck')
