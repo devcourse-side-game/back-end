@@ -11,8 +11,15 @@ async function bootstrap() {
 	// 쿠키 파서 미들웨어 등록
 	app.use(cookieParser());
 
-	// validationPipe 등록
-	app.useGlobalPipes(new ValidationPipe());
+	// validationPipe 등록 (타입 변환 활성화)
+	app.useGlobalPipes(
+		new ValidationPipe({
+			transform: true,
+			transformOptions: { enableImplicitConversion: true },
+			whitelist: true,
+			forbidNonWhitelisted: true,
+		}),
+	);
 
 	// 전역 예외 필터 등록
 	app.useGlobalFilters(new AppExceptionFilter());
