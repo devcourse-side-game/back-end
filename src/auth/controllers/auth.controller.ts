@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards, Headers } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
@@ -35,10 +36,18 @@ export class AuthController {
 	@ApiOperation({ summary: '로그인', description: '사용자 인증 및 토큰 발급' })
 	@ApiResponse({ status: 200, description: '로그인 성공', type: LoginResponseDto })
 	@ApiResponse({ status: 401, description: '인증 실패', type: AuthErrorResponseDto })
-	async login(@Body() loginDto: LoginDto) {
+	async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
 		const { accessToken, refreshToken } = await this.authService.login(loginDto);
 
-		return { message: '로그인 성공', accessToken, refreshToken };
+		res.cookie('refreshToken', refreshToken, {
+			httpOnly: true,
+			secure: false,
+			path: '/api/auth/refresh',
+			sameSite: 'strict',
+			maxAge: parseInt(process.env.JWT_REFRESH_EXPIRES_IN || '604800')
+		});
+
+		return { message: '로그인 성공', accessToken };
 	}
 
 	@Post('logout')
