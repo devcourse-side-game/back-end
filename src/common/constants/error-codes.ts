@@ -10,10 +10,10 @@ export interface ErrorDetails {
 export enum ErrorCode {
     // 사용자 관련 오류 (u-xxx)
     REPASSWORD_MISMATCH = 'u-001', // 비밀번호 확인이 일치하지 않음
-    USER_ALREADY_EXISTS = 'u-002', // 이미 존재하는 아이디
+    USER_ALREADY_EXISTS = 'u-002', // 이미 존재하는 이메일
 
     // 인증 관련 오류 (a-xxx)
-    USER_NOT_FOUND = 'a-001', // 존재하지 않는 아이디
+    USER_NOT_FOUND = 'a-001', // 존재하지 않는 이메일
     INVALID_PASSWORD = 'a-002', // 비밀번호 불일치
     ACCESS_TOKEN_EXPIRED = 'a-003', // 액세스 토큰 만료
     REFRESH_TOKEN_EXPIRED = 'a-004', // 리프레시 토큰 만료
@@ -49,16 +49,16 @@ export const ERROR_DETAILS: Record<ErrorCode, ErrorDetails> = {
     // 사용자 관련 오류
     [ErrorCode.USER_ALREADY_EXISTS]: {
         statusCode: 409,
-        message: '이미 존재하는 사용자 ID입니다.',
-        detail: '다른 사용자 ID를 사용해주세요.',
+        message: '이미 존재하는 이메일입니다.',
+        detail: '다른 이메일을 사용해주세요.',
     },
     [ErrorCode.USER_NOT_FOUND]: {
-        statusCode: 404,
-        message: '사용자를 찾을 수 없습니다.',
-        detail: '존재하지 않는 사용자입니다.',
+        statusCode: 401,
+        message: '존재하지 않는 이메일입니다.',
+        detail: '존재하지 않는 이메일입니다.',
     },
     [ErrorCode.INVALID_PASSWORD]: {
-        statusCode: 400,
+        statusCode: 401,
         message: '비밀번호가 일치하지 않습니다.',
         detail: '비밀번호가 일치하지 않습니다.',
     },
