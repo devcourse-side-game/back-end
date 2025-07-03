@@ -66,7 +66,22 @@ export class PartiesController {
 			},
 		},
 	})
-	@ApiUnauthorizedResponse({ description: '인증되지 않은 사용자입니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties',
+				},
+			},
+		},
+	})
 	@ApiNotFoundResponse({
 		description: '존재하지 않는 리소스입니다. (e.g. 게임, 사용자, 게임 프로필)',
 		content: {
@@ -108,7 +123,22 @@ export class PartiesController {
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
 	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
-	@ApiUnauthorizedResponse({ description: '인증되지 않은 사용자입니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1',
+				},
+			},
+		},
+	})
 	@ApiNotFoundResponse({
 		description: '파티를 찾을 수 없습니다.',
 		content: {
@@ -151,7 +181,22 @@ export class PartiesController {
 			},
 		},
 	})
-	@ApiUnauthorizedResponse({ description: '인증되지 않은 사용자입니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1',
+				},
+			},
+		},
+	})
 	@ApiForbiddenResponse({
 		description: '권한이 없습니다.',
 		content: {
@@ -211,10 +256,29 @@ export class PartiesController {
 	@ApiOperation({ summary: '파티 삭제' })
 	@ApiOkResponse({
 		description: '파티가 성공적으로 삭제되었습니다.',
-		schema: { example: { message: '파티가 성공적으로 삭제되었습니다.' } },
+		content: {
+			'application/json': {
+				example: { message: '파티가 성공적으로 삭제되었습니다.' },
+			},
+		},
 	})
 	@HttpCode(HttpStatus.OK) // 성공 시 200 OK
-	@ApiUnauthorizedResponse({ description: '인증되지 않은 사용자입니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1',
+				},
+			},
+		},
+	})
 	@ApiForbiddenResponse({
 		description: '파티 생성자만 삭제할 수 있습니다.',
 		content: {
@@ -259,33 +323,22 @@ export class PartiesController {
 	@ApiOperation({ summary: '파티 목록 조회' })
 	@ApiOkResponse({
 		description: '파티 목록을 반환합니다.',
-		type: PartyListItemDto,
-		isArray: true,
-		schema: {
-			example: [
-				{
-					id: 1,
-					title: '같이 즐겁게 게임해요',
-					gameId: 1,
-					gameBannerUrl:
-						'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
-					creatorId: 1,
-					purposeTag: '레이드',
-					maxParticipants: 8,
-					description: '파티 설명',
-					isPrivate: false,
-					accessCode: null,
-					isCompleted: false,
-					createdAt: '2025-06-10T18:00:00',
-					updatedAt: '2025-06-10T18:00:00',
-					leader: {
-						userId: 1,
-						username: 'user1',
-						gameUsername: 'pro_gamer123',
-					},
-					currentMemberCount: 3,
+		type: [PartyListItemDto],
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties',
 				},
-			],
+			},
 		},
 	})
 	@ApiQuery({ name: 'gameId', required: false, type: Number, description: '게임 ID' })
@@ -313,7 +366,11 @@ export class PartiesController {
 	@ApiOperation({ summary: '파티 완료 처리' })
 	@ApiOkResponse({
 		description: '파티가 완료 처리되었습니다.',
-		schema: { example: { message: '파티가 완료 처리되었습니다.' } },
+		content: {
+			'application/json': {
+				example: { message: '파티가 완료 처리되었습니다.' },
+			},
+		},
 	})
 	@ApiBadRequestResponse({
 		description: '이미 완료된 파티입니다.',
@@ -331,7 +388,22 @@ export class PartiesController {
 			},
 		},
 	})
-	@ApiUnauthorizedResponse({ description: '인증되지 않은 사용자입니다.' })
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/complete',
+				},
+			},
+		},
+	})
 	@ApiForbiddenResponse({
 		description: '파티 생성자만 완료 처리할 수 있습니다.',
 		content: {

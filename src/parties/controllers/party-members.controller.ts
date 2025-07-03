@@ -55,17 +55,31 @@ export class PartyMembersController {
 		},
 	})
 	@ApiUnauthorizedResponse({
-		description: '인증이 필요합니다.',
-		schema: { example: { statusCode: 401, message: 'Unauthorized' } },
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members',
+				},
+			},
+		},
 	})
 	@ApiNotFoundResponse({
 		description: '파티를 찾을 수 없습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 404,
-				errorCode: 'p-001',
-				message: '파티를 찾을 수 없습니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 404,
+					errorCode: 'p-001',
+					message: '파티를 찾을 수 없습니다.',
+				},
 			},
 		},
 	})
@@ -86,27 +100,51 @@ export class PartyMembersController {
 		description: '파티에서 탈퇴했습니다.',
 		schema: { example: { message: 'user1님이 파티에서 탈퇴했습니다.' } },
 	})
-	@ApiBadRequestResponse({
+	@ApiForbiddenResponse({
 		description: '파티장은 탈퇴할 수 없습니다.',
-		schema: {
-			example: {
-				statusCode: 400,
-				message: '파티장은 탈퇴할 수 없습니다.',
-				error: 'Bad Request',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 403,
+					errorCode: 'p-005',
+					message: '파티장은 파티를 떠날 수 없습니다.',
+					detail: '파티장을 다른 멤버에게 위임한 후 떠나주세요.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members/me',
+				},
 			},
 		},
 	})
 	@ApiUnauthorizedResponse({
-		description: '인증이 필요합니다.',
-		schema: { example: { statusCode: 401, message: 'Unauthorized' } },
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members/me',
+				},
+			},
+		},
 	})
 	@ApiNotFoundResponse({
-		description: '파티에 참가하지 않았습니다.',
-		schema: {
-			example: {
-				statusCode: 404,
-				message: '파티에 참가하지 않았습니다.',
-				error: 'Not Found',
+		description: '파티 멤버를 찾을 수 없습니다. (파티에 참가하지 않은 경우)',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 404,
+					errorCode: 'p-006',
+					message: '파티 멤버를 찾을 수 없습니다.',
+					detail: '해당 사용자는 이 파티의 멤버가 아닙니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members/me',
+				},
 			},
 		},
 	})
@@ -126,19 +164,33 @@ export class PartyMembersController {
 	@ApiBearerAuth()
 	@UseGuards(JwtAuthGuard)
 	@ApiOperation({ summary: '파티 멤버 목록 조회' })
-	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.' })
+	@ApiOkResponse({ description: '파티 멤버 목록을 반환합니다.', type: MemberListResponseDto })
 	@ApiUnauthorizedResponse({
-		description: '인증이 필요합니다.',
-		schema: { example: { statusCode: 401, message: 'Unauthorized' } },
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members',
+				},
+			},
+		},
 	})
 	@ApiNotFoundResponse({
 		description: '파티를 찾을 수 없습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 404,
-				errorCode: 'p-001',
-				message: '파티를 찾을 수 없습니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 404,
+					errorCode: 'p-001',
+					message: '파티를 찾을 수 없습니다.',
+				},
 			},
 		},
 	})
@@ -171,41 +223,63 @@ export class PartyMembersController {
 		},
 	})
 	@ApiUnauthorizedResponse({
-		description: '인증이 필요합니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 401,
-				errorCode: 'u-001',
-				message: '인증이 필요합니다.',
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members/2',
+				},
 			},
 		},
 	})
 	@ApiForbiddenResponse({
 		description: '파티장만 강퇴할 수 있습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 403,
-				errorCode: 'p-002',
-				message: '파티장만 이 작업을 수행할 수 있습니다.',
-				detail: '오직 파티장만 멤버를 강퇴할 수 있습니다.',
-				timestamp: '2025-06-30T12:00:00.000Z',
-				path: '/parties/1/members/2',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 403,
+					errorCode: 'p-002',
+					message: '파티장만 이 작업을 수행할 수 있습니다.',
+					detail: '오직 파티장만 멤버를 강퇴할 수 있습니다.',
+					timestamp: '2025-06-30T12:00:00.000Z',
+					path: '/parties/1/members/2',
+				},
 			},
 		},
 	})
 	@ApiNotFoundResponse({
 		description: '파티나 멤버를 찾을 수 없습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 404,
-				errorCode: 'p-007',
-				message: '해당 멤버를 찾을 수 없습니다.',
-				detail: '파티에서 ID가 2인 멤버를 찾을 수 없습니다.',
-				timestamp: '2025-06-30T12:00:00.000Z',
-				path: '/parties/1/members/2',
+		content: {
+			'application/json': {
+				examples: {
+					'파티 없음': {
+						value: {
+							success: false,
+							statusCode: 404,
+							errorCode: 'p-001',
+							message: '파티를 찾을 수 없습니다.',
+							timestamp: '2025-07-03T10:00:00.000Z',
+							path: '/parties/999/members/2',
+						},
+					},
+					'멤버 없음': {
+						value: {
+							success: false,
+							statusCode: 404,
+							errorCode: 'p-009',
+							message: '해당 유저는 파티 멤버가 아닙니다.',
+							timestamp: '2025-07-03T10:00:00.000Z',
+							path: '/parties/1/members/999',
+						},
+					},
+				},
 			},
 		},
 	})
@@ -241,41 +315,63 @@ export class PartyMembersController {
 		},
 	})
 	@ApiUnauthorizedResponse({
-		description: '인증이 필요합니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 401,
-				errorCode: 'u-001',
-				message: '인증이 필요합니다.',
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/1/members/leader',
+				},
 			},
 		},
 	})
 	@ApiForbiddenResponse({
-		description: '파티장만 권한을 이양할 수 있습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 403,
-				errorCode: 'p-002',
-				message: '파티장만 이 작업을 수행할 수 있습니다.',
-				detail: '오직 파티장만 리더를 변경할 수 있습니다.',
-				timestamp: '2025-06-30T12:00:00.000Z',
-				path: '/parties/1/leader/2',
+		description: '파티장만 위임할 수 있습니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 403,
+					errorCode: 'p-002',
+					message: '파티장만 이 작업을 수행할 수 있습니다.',
+					detail: '오직 파티장만 리더를 변경할 수 있습니다.',
+					timestamp: '2025-06-30T12:00:00.000Z',
+					path: '/parties/1/members/leader',
+				},
 			},
 		},
 	})
 	@ApiNotFoundResponse({
 		description: '파티나 멤버를 찾을 수 없습니다.',
-		schema: {
-			example: {
-				success: false,
-				statusCode: 404,
-				errorCode: 'p-007',
-				message: '해당 멤버를 찾을 수 없습니다.',
-				detail: '파티에서 ID가 2인 멤버를 찾을 수 없습니다.',
-				timestamp: '2025-06-30T12:00:00.000Z',
-				path: '/parties/1/leader/2',
+		content: {
+			'application/json': {
+				examples: {
+					'파티 없음': {
+						value: {
+							success: false,
+							statusCode: 404,
+							errorCode: 'p-001',
+							message: '파티를 찾을 수 없습니다.',
+							timestamp: '2025-07-03T10:00:00.000Z',
+							path: '/parties/999/members/leader',
+						},
+					},
+					'멤버 없음': {
+						value: {
+							success: false,
+							statusCode: 404,
+							errorCode: 'p-009',
+							message: '해당 유저는 파티 멤버가 아닙니다.',
+							timestamp: '2025-07-03T10:00:00.000Z',
+							path: '/parties/1/members/leader',
+						},
+					},
+				},
 			},
 		},
 	})
