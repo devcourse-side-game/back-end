@@ -42,7 +42,7 @@ export class PartiesService {
 			const creator = await queryRunner.manager.findOneBy(User, { id: creatorId });
 			if (!creator) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
-			let userGameProfile: { id: number }; // 타입을 명확히 지정
+                        let userGameProfile: UserGameProfile; // 타입을 명확히 지정
 			if (dto.profileId) {
 				const profile = await this.userGameProfilesService.getUserGameProfileById(
 					dto.profileId,
