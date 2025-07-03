@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { PartiesModule } from './parties/parties.module';
 import { GamesModule } from './games/games.module';
 import { UserGameProfilesModule } from './user-game-profiles/user-game-profiles.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
 	imports: [
@@ -20,6 +21,7 @@ import { UserGameProfilesModule } from './user-game-profiles/user-game-profiles.
 		PartiesModule,
 		GamesModule,
 		UserGameProfilesModule,
+		LikesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

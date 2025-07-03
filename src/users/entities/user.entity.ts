@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Party } from '../../parties/entities/party.entity';
+import { Like } from '../../likes/entities/like.entity';
 import {
 	Column,
 	CreateDateColumn,
@@ -48,4 +49,10 @@ export class User {
 	/* 관계 */
 	@OneToMany(() => Party, (party) => party.creator)
 	createdParties: Party[];
+
+	@OneToMany(() => Like, (like) => like.givenUser)
+	givenLikes: Like[];
+
+	@OneToMany(() => Like, (like) => like.receivedUser)
+	receivedLikes: Like[];
 }

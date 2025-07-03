@@ -9,6 +9,12 @@ export class AppExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse();
         const request = ctx.getRequest();
 
+        // 응답이 이미 전송되었는지 확인
+        if (response.headersSent) {
+            console.error('Headers already sent', exception);
+            return;
+        }
+
         // 데이터베이스 오류 처리 (QueryFailedError)
         if (exception instanceof QueryFailedError) {
             const appException = handleDatabaseError(exception);
@@ -58,7 +64,7 @@ export class AppExceptionFilter implements ExceptionFilter {
                 }
             }
 
-            response.status(status).json(errorResponse);
+            return response.status(status).json(errorResponse);
         }
 
         // 일반 Error 처리
