@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../app.module';
-import { SteamBatchService } from '../steam-batch.service';
+import { SteamBatchService } from '../services/steam-batch.service';
 
 async function bootstrap() {
 	const app = await NestFactory.createApplicationContext(AppModule);

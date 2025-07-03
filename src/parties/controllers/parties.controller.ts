@@ -1,215 +1,318 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import {
-	ApiBearerAuth,
-	ApiOperation,
-	ApiParam,
-	ApiQuery,
-	ApiResponse,
-	ApiTags,
-} from '@nestjs/swagger';
+	Controller,
+	Post,
+	Body,
+	UseGuards,
+	Get,
+	Param,
+	ParseIntPipe,
+	Patch,
+	Delete,
+	Query,
+} from '@nestjs/common';
+import { PartiesService } from '../services/parties.service';
+import { CreatePartyDto } from '../dto/create-party.dto';
+import { UpdatePartyDto } from '../dto/update-party.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { CreatePartyDto, UpdatePartyDto, JoinPrivatePartyDto } from '../dto/index';
+import { PartyListItemDto } from '../dto/response.dto';
 import {
-	PartyListResponseDto,
-	PartyDetailResponseDto,
-	PartyResponseDto,
-	MemberListResponseDto,
-	PartiesErrorResponseDto,
-} from '../dto/index';
+	ApiTags,
+	ApiOperation,
+	ApiCreatedResponse,
+	ApiOkResponse,
+	ApiBearerAuth,
+	ApiQuery,
+	ApiBadRequestResponse,
+	ApiUnauthorizedResponse,
+	ApiForbiddenResponse,
+	ApiNotFoundResponse,
+} from '@nestjs/swagger';
+import { PartyWithMembersDto } from '../dto/party-with-members.dto';
+import { GetUser } from '../../auth/decorator/get-user.decorator';
 
 @ApiTags('parties')
-@Controller('api/parties')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('parties')
 export class PartiesController {
-	// 파티 목록 조회
-	@Get()
-	@ApiOperation({
-		summary: '파티 목록 조회',
-		description: '모든 파티 목록을 조회합니다 (필터링 옵션 포함)',
-	})
-	@ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
-	@ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
-	@ApiQuery({ name: 'is_completed', required: false, description: '완료 여부 (true, false)' })
-	@ApiQuery({ name: 'game_id', required: false, description: '게임 ID' })
-	@ApiQuery({ name: 'purpose_tag', required: false, description: '목적 태그' })
-	@ApiResponse({ status: 200, description: '파티 목록 조회 성공', type: PartyListResponseDto })
-	@ApiResponse({ status: 400, description: '잘못된 요청', type: PartiesErrorResponseDto })
-	getParties(
-		@Query('page') page?: number,
-		@Query('limit') limit?: number,
-		@Query('is_completed') isCompleted?: boolean,
-		@Query('game_id') gameId?: number,
-		@Query('purpose_tag') purposeTag?: string,
-	) {
-		return { parties: [] }; // 임시 응답
-	}
+	constructor(private readonly partiesService: PartiesService) {}
 
-	// 파티 생성
 	@Post()
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티 생성', description: '새 파티 모집글을 작성합니다' })
-	@ApiResponse({ status: 201, description: '파티 생성 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 400, description: '잘못된 요청', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	createParty(@Body() createPartyDto: CreatePartyDto) {
-		return { message: '파티가 성공적으로 생성되었습니다.' }; // 임시 응답
-	}
-
-	// 파티 상세 조회
-	@Get(':partyId')
-	@ApiOperation({ summary: '파티 상세 조회', description: '특정 파티의 상세 정보를 조회합니다' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 상세 조회 성공', type: PartyDetailResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	getPartyById(@Param('partyId') partyId: number) {
-		return { id: partyId }; // 임시 응답
-	}
-
-	// 파티 정보 수정
-	@Put(':partyId')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({
-		summary: '파티 정보 수정',
-		description: '파티 정보를 업데이트합니다 (파티장만 가능)',
+	@ApiOperation({ summary: '파티 생성' })
+	@ApiCreatedResponse({
+		description: '파티가 성공적으로 생성되었습니다.',
+		type: PartyWithMembersDto,
 	})
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 정보 수정 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 400, description: '잘못된 요청', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 403, description: '권한 없음', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	updateParty(@Param('partyId') partyId: number, @Body() updatePartyDto: UpdatePartyDto) {
-		return { message: '파티 정보가 성공적으로 수정되었습니다.' }; // 임시 응답
-	}
-
-	// 파티 삭제
-	@Delete(':partyId')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티 삭제', description: '파티를 삭제합니다 (파티장만 가능)' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 삭제 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 403, description: '권한 없음', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	deleteParty(@Param('partyId') partyId: number) {
-		return { message: '파티가 성공적으로 삭제되었습니다.' }; // 임시 응답
-	}
-
-	// 파티 완료 처리
-	@Put(':partyId/complete')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티 완료 처리', description: '파티 모집을 완료 처리합니다' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 완료 처리 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 403, description: '권한 없음', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	completeParty(@Param('partyId') partyId: number) {
-		return { message: '파티 모집이 완료되었습니다.' }; // 임시 응답
-	}
-
-	// 파티 참가
-	@Post(':partyId/join')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티 참가', description: '파티에 참가 신청합니다' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 참가 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 400, description: '잘못된 요청', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	joinParty(@Param('partyId') partyId: number) {
-		return { message: '파티에 성공적으로 참가했습니다.' }; // 임시 응답
-	}
-
-	// 비공개 파티 참가
-	@Post(':partyId/join-private')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({
-		summary: '비공개 파티 참가',
-		description: '접근 코드로 비공개 파티에 참가합니다',
+	@ApiBadRequestResponse({
+		description: '잘못된 요청 데이터입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'g-001',
+				message: '입력 데이터가 유효하지 않습니다.',
+				detail: '비공개 파티는 참여 코드가 필요합니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
 	})
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '비공개 파티 참가 성공', type: PartyResponseDto })
-	@ApiResponse({
-		status: 400,
-		description: '잘못된 요청 또는 유효하지 않은 코드',
-		type: PartiesErrorResponseDto,
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
 	})
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	joinPrivateParty(
-		@Param('partyId') partyId: number,
-		@Body() joinPrivatePartyDto: JoinPrivatePartyDto,
-	) {
-		return { message: '비공개 파티에 성공적으로 참가했습니다.' }; // 임시 응답
+	@ApiNotFoundResponse({
+		description: '존재하지 않는 게임입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'gm-001',
+				message: '게임을 찾을 수 없습니다.',
+				detail: '존재하지 않는 게임입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties',
+			},
+		},
+	})
+	createParty(
+		@Body() createPartyDto: CreatePartyDto,
+		@GetUser() user: { id: number },
+	): Promise<PartyWithMembersDto> {
+		return this.partiesService.createParty(createPartyDto, user.id);
 	}
 
-	// 파티 탈퇴
-	@Delete(':partyId/leave')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티 탈퇴', description: '파티에서 탈퇴합니다' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티 탈퇴 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	leaveParty(@Param('partyId') partyId: number) {
-		return { message: '파티에서 성공적으로 탈퇴했습니다.' }; // 임시 응답
+	@Get(':id')
+	@ApiOperation({ summary: '특정 파티 조회' })
+	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	async findPartyById(@Param('id', ParseIntPipe) id: number): Promise<PartyWithMembersDto> {
+		return this.partiesService.findPartyById(id);
 	}
 
-	// 파티원 목록 조회
-	@Get(':partyId/members')
-	@ApiOperation({ summary: '파티원 목록 조회', description: '파티 참여자 목록을 조회합니다' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiResponse({ status: 200, description: '파티원 목록 조회 성공', type: MemberListResponseDto })
-	@ApiResponse({ status: 404, description: '파티를 찾을 수 없음', type: PartiesErrorResponseDto })
-	getPartyMembers(@Param('partyId') partyId: number) {
-		return { members: [] }; // 임시 응답
+	@Patch(':id')
+	@ApiOperation({ summary: '파티 정보 수정' })
+	@ApiOkResponse({
+		description: '수정된 파티 정보를 반환합니다.',
+		type: PartyWithMembersDto,
+	})
+	@ApiBadRequestResponse({
+		description: '잘못된 요청 데이터입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'g-001',
+				message: '입력 데이터가 유효하지 않습니다.',
+				detail: 'profileId 또는 gameUsername 중 하나만 입력해야 합니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({ description: '인증이 필요합니다.' })
+	@ApiForbiddenResponse({
+		description: '권한이 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 403,
+				errorCode: 'g-004',
+				message: '요청을 수행할 권한이 없습니다.',
+				detail: '파티를 수정할 권한이 없습니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티 또는 게임 프로필을 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-07-01T12:00:00.000Z',
+				path: '/parties/1',
+			},
+		},
+	})
+	updateParty(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() updatePartyDto: UpdatePartyDto,
+		@GetUser() user: { id: number },
+	): Promise<PartyWithMembersDto> {
+		return this.partiesService.updateParty(id, updatePartyDto, user.id);
 	}
 
-	// 파티원 강퇴
-	@Delete(':partyId/members/:userId')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({ summary: '파티원 강퇴', description: '파티원을 강퇴합니다 (파티장만 가능)' })
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiParam({ name: 'userId', description: '강퇴할 사용자 ID' })
-	@ApiResponse({ status: 200, description: '파티원 강퇴 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 403, description: '권한 없음', type: PartiesErrorResponseDto })
-	@ApiResponse({
-		status: 404,
-		description: '파티 또는 사용자를 찾을 수 없음',
-		type: PartiesErrorResponseDto,
+	@Delete(':id')
+	@ApiOperation({ summary: '파티 삭제' })
+	@ApiOkResponse({
+		description: '파티가 성공적으로 삭제되었습니다.',
+		schema: { example: { message: '파티가 성공적으로 삭제되었습니다.' } },
 	})
-	kickMember(@Param('partyId') partyId: number, @Param('userId') userId: number) {
-		return { message: '파티원이 성공적으로 강퇴되었습니다.' }; // 임시 응답
+	async deleteParty(
+		@Param('id', ParseIntPipe) id: number,
+		@GetUser() user: { id: number },
+	): Promise<{ message: string }> {
+		await this.partiesService.deleteParty(id, user.id);
+		return { message: '파티가 성공적으로 삭제되었습니다.' };
 	}
 
-	// 파티장 위임 (추후 시간 나면)
-	@Put(':partyId/leader/:userId')
-	@UseGuards(JwtAuthGuard)
-	@ApiBearerAuth('access-token')
-	@ApiOperation({
-		summary: '파티장 변경',
-		description: '파티장 권한을 다른 파티원에게 이양합니다 (현재 파티장만 가능)',
+	@Get()
+	@ApiOperation({ summary: '파티 목록 조회' })
+	@ApiOkResponse({
+		description: '파티 목록을 반환합니다.',
+		type: PartyListItemDto,
+		isArray: true,
+		schema: {
+			example: [
+				{
+					id: 1,
+					title: '같이 즐겁게 게임해요',
+					gameId: 1,
+					gameBannerUrl:
+						'https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg',
+					creatorId: 1,
+					purposeTag: '레이드',
+					maxParticipants: 8,
+					description: '파티 설명',
+					isPrivate: false,
+					accessCode: null,
+					isCompleted: false,
+					createdAt: '2025-06-10T18:00:00',
+					updatedAt: '2025-06-10T18:00:00',
+					leader: {
+						userId: 1,
+						username: 'user1',
+						gameUsername: 'pro_gamer123',
+					},
+					currentMemberCount: 3,
+				},
+			],
+		},
 	})
-	@ApiParam({ name: 'partyId', description: '파티 ID' })
-	@ApiParam({ name: 'userId', description: '새 파티장이 될 사용자 ID' })
-	@ApiResponse({ status: 200, description: '파티장 변경 성공', type: PartyResponseDto })
-	@ApiResponse({ status: 401, description: '인증 실패', type: PartiesErrorResponseDto })
-	@ApiResponse({ status: 403, description: '권한 없음', type: PartiesErrorResponseDto })
-	@ApiResponse({
-		status: 404,
-		description: '파티 또는 사용자를 찾을 수 없음',
-		type: PartiesErrorResponseDto,
+	@ApiQuery({ name: 'gameId', required: false, type: Number, description: '게임 ID' })
+	@ApiQuery({ name: 'isCompleted', required: false, type: Boolean, description: '완료 여부' })
+	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
+	@ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호' })
+	@ApiQuery({ name: 'limit', required: false, type: Number, description: '페이지 당 개수' })
+	async listParties(
+		@Query('gameId') gameId?: number,
+		@Query('isCompleted') isCompleted?: boolean,
+		@Query('isPrivate') isPrivate?: boolean,
+		@Query('page') page = 1,
+		@Query('limit') limit = 20,
+	): Promise<import('../dto/response.dto').PartyListItemDto[]> {
+		return this.partiesService.listParties({
+			gameId,
+			isCompleted,
+			isPrivate,
+			page,
+			limit,
+		});
+	}
+
+	@Patch(':id/complete')
+	@ApiOperation({ summary: '파티 완료 처리' })
+	@ApiOkResponse({
+		description: '파티가 완료 처리되었습니다.',
+		schema: { example: { message: '파티가 완료 처리되었습니다.' } },
 	})
-	changeLeader(@Param('partyId') partyId: number, @Param('userId') userId: number) {
-		return { message: '파티장 권한이 성공적으로 위임되었습니다.' }; // 임시 응답
+	@ApiBadRequestResponse({
+		description: '이미 완료된 파티입니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 400,
+				errorCode: 'p-009',
+				message: '이미 완료된 파티입니다.',
+				detail: '완료된 파티는 더 이상 수정할 수 없습니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증이 필요합니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 401,
+				message: 'Unauthorized',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiForbiddenResponse({
+		description: '파티 생성자만 완료 처리할 수 있습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 403,
+				errorCode: 'p-010',
+				message: '파티 생성자만 수행할 수 있는 작업입니다.',
+				detail: '파티 생성자 권한이 필요합니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	@ApiNotFoundResponse({
+		description: '파티를 찾을 수 없습니다.',
+		schema: {
+			example: {
+				success: false,
+				statusCode: 404,
+				errorCode: 'p-001',
+				message: '파티를 찾을 수 없습니다.',
+				detail: '존재하지 않는 파티입니다.',
+				timestamp: '2025-06-30T12:00:00.000Z',
+				path: '/parties/1/complete',
+			},
+		},
+	})
+	async completeParty(
+		@Param('id', ParseIntPipe) id: number,
+		@GetUser() user: { id: number },
+	): Promise<{ message: string }> {
+		await this.partiesService.completeParty(id, user.id);
+		return { message: '파티가 완료 처리되었습니다.' };
 	}
 }

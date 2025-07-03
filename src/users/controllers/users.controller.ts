@@ -67,7 +67,10 @@ export class UsersController {
 		type: PasswordErrorResponseDto,
 	})
 	@ApiResponse({ status: 404, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
-	async changePassword(@GetUser() jwtPayload: JwtPayload, @Body() changePasswordDto: ChangePasswordDto) {
+	async changePassword(
+		@GetUser() jwtPayload: JwtPayload,
+		@Body() changePasswordDto: ChangePasswordDto,
+	) {
 		const userId = jwtPayload.id; // JWT에서 추출된 사용자 ID
 		await this.usersService.changePassword(userId, changePasswordDto);
 		return { message: '비밀번호가 성공적으로 변경되었습니다.' };

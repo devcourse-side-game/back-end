@@ -8,21 +8,21 @@ import { ChangePasswordDto } from '../dto/change-password.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-  ) {}
+	constructor(
+		@InjectRepository(User)
+		private usersRepository: Repository<User>,
+	) {}
 
-  /**
-   * 사용자 ID로 사용자 정보 조회
-   */
-  async findById(id: number): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-    return user;
-  }
+	/**
+	 * 사용자 ID로 사용자 정보 조회
+	 */
+	async findById(id: number): Promise<User> {
+		const user = await this.usersRepository.findOne({ where: { id } });
+		if (!user) {
+			throw new NotFoundException('사용자를 찾을 수 없습니다.');
+		}
+		return user;
+	}
 
   /**
    * 사용자 프로필 조회
@@ -66,9 +66,6 @@ export class UsersService {
       }
       user.email = updateUserDto.email;
     }
-
-    return this.usersRepository.save(user);
-  }
 
   /**
    * 비밀번호 변경
