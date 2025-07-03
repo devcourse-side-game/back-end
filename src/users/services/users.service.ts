@@ -67,6 +67,9 @@ export class UsersService {
       user.email = updateUserDto.email;
     }
 
+    return this.usersRepository.save(user);
+  }
+
   /**
    * 비밀번호 변경
    */

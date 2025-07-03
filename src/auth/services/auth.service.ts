@@ -74,29 +74,17 @@ export class AuthService {
 	/* 토큰 생성 (액세스 토큰 + 리프레시 토큰) */
 	async generateTokens(payload: { id: number; username: string; email: string }) {
 		// 액세스 토큰 생성
-		const accessToken = this.jwtService.sign(payload, {
-			audience: payload.email,
-			expiresIn: process.env.JWT_EXPIRES_IN
-		});
+		const jwt_expires_in = process.env.JWT_EXPIRES_IN || '15m';
+		const accessToken = await this.generateToken(payload, jwt_expires_in);
 
 		// 리프레시 토큰 생성
-		const refreshToken = this.jwtService.sign(payload, {
-			audience: payload.email,
-			expiresIn: process.env.JWT_REFRESH_EXPIRES_IN
-		});
+		const jwt_refresh_expires_in = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+		const refreshToken = await this.generateToken(payload, jwt_refresh_expires_in);
 
 		// 리프레시 토큰 데이터베이스에 저장
 		await this.userRepository.update(payload.id, { refreshToken });
 
 		return { accessToken, refreshToken };
-	}
-
-	/* 액세스 토큰 만 생성 */
-	async generateAccessToken(payload: { id: number; username: string; email: string }) {
-		return this.jwtService.sign(payload, {
-			audience: payload.email,
-			expiresIn: '15m'
-		});
 	}
 
 	/* 리프레시 토큰으로 새 액세스 토큰 발급 */
@@ -118,11 +106,12 @@ export class AuthService {
 			}
 			
 			// 새 액세스 토큰 발급
-			const accessToken = await this.generateAccessToken({ 
+			const jwt_expires_in = process.env.JWT_EXPIRES_IN || '15m';
+			const accessToken = await this.generateToken({ 
 				id: user.id, 
 				username: user.username, 
 				email: user.email 
-			});
+			}, jwt_expires_in);
 			
 			return { 
 				message: '새로운 액세스 토큰이 발급되었습니다.', 
@@ -142,5 +131,13 @@ export class AuthService {
 			// 기타 오류
 			throw error;
 		}
+	}
+
+	/* JWT 토큰 생성 */
+	async generateToken(payload: { id: number; username: string; email: string }, expiresIn: string | number) {
+		return this.jwtService.sign(payload, {
+			audience: payload.email,
+			expiresIn: expiresIn
+		});
 	}
 }
