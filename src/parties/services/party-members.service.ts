@@ -210,7 +210,7 @@ export class PartyMembersService {
 				username: member.user?.username || '',
 				isLeader: member.isLeader,
 				joinedAt: member.joinedAt?.toISOString(),
-				userGameProfile: { gameUsername },
+				gameUsername: gameUsername,
 			};
 		});
 

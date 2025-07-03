@@ -62,11 +62,6 @@ export class PartyListItemDto {
 	currentMemberCount: number;
 }
 
-export class UserGameProfileDto {
-	@ApiProperty({ example: 'player123' })
-	gameUsername: string;
-}
-
 export class PartyMemberDetailDto {
 	@ApiProperty({ example: 1 })
 	id: number; // PartyMembers.id
@@ -83,8 +78,8 @@ export class PartyMemberDetailDto {
 	@ApiProperty({ example: '2025-06-27T09:00:00+09:00' })
 	joinedAt: string;
 
-	@ApiProperty({ type: () => UserGameProfileDto })
-	userGameProfile: UserGameProfileDto;
+	@ApiProperty({ example: 'player123', description: '게임 내 닉네임' })
+	gameUsername: string;
 }
 
 // 기본 파티 정보 DTO (재사용 가능)
