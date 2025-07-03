@@ -42,19 +42,20 @@ export class PartiesService {
 			const creator = await queryRunner.manager.findOneBy(User, { id: creatorId });
 			if (!creator) throw new AppException(ErrorCode.USER_NOT_FOUND);
 
-			let userGameProfile;
+			let userGameProfile: { id: number }; // 타입을 명확히 지정
 			if (dto.profileId) {
-				userGameProfile = await this.userGameProfilesService.getUserGameProfileById(
+				const profile = await this.userGameProfilesService.getUserGameProfileById(
 					dto.profileId,
 					creatorId,
 					dto.gameId,
 				);
-				if (!userGameProfile) {
+				if (!profile) {
 					throw new AppException(
 						ErrorCode.USER_GAME_PROFILE_NOT_FOUND,
 						'선택한 게임 프로필이 존재하지 않습니다.',
 					);
 				}
+				userGameProfile = profile;
 			} else if (dto.gameUsername) {
 				userGameProfile = await this.userGameProfilesService.findOrCreateUserGameProfile(
 					creatorId,
@@ -92,6 +93,7 @@ export class PartiesService {
 				partyId: newParty.id,
 				userId: creatorId,
 				isLeader: true,
+				userGameProfileId: userGameProfile.id, // 생성자의 게임 프로필 ID 저장
 			});
 			await queryRunner.manager.save(partyMember);
 
@@ -114,7 +116,7 @@ export class PartiesService {
 			// 리더의 게임 프로필을 명확히 조회하여 맵에 포함
 			const leaderUserId = creatorId;
 			const leaderGameId = dto.gameId;
-			const leaderProfile = userGameProfile as { gameUsername: string };
+			const leaderProfile = userGameProfile as { gameUsername: string; id: number }; // 타입 단언 추가
 			const userGameProfilesMap = new Map<string, string>();
 			if (leaderProfile && leaderProfile.gameUsername) {
 				userGameProfilesMap.set(
