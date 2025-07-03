@@ -92,7 +92,7 @@ export class PartyMembersController {
 		return { message: `${username}님이 파티에 참가했습니다.` };
 	}
 
-	@Delete('/me')
+	@Delete()
 	@ApiBearerAuth()
 	@UseGuards(JwtAuthGuard)
 	@ApiOperation({ summary: '파티 탈퇴' })
@@ -111,7 +111,7 @@ export class PartyMembersController {
 					message: '파티장은 파티를 떠날 수 없습니다.',
 					detail: '파티장을 다른 멤버에게 위임한 후 떠나주세요.',
 					timestamp: '2025-07-03T10:00:00.000Z',
-					path: '/parties/1/members/me',
+					path: '/parties/1/members',
 				},
 			},
 		},
@@ -127,7 +127,7 @@ export class PartyMembersController {
 					message: '인증되지 않은 사용자입니다.',
 					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
 					timestamp: '2025-07-03T10:00:00.000Z',
-					path: '/parties/1/members/me',
+					path: '/parties/1/members',
 				},
 			},
 		},
@@ -143,7 +143,7 @@ export class PartyMembersController {
 					message: '파티 멤버를 찾을 수 없습니다.',
 					detail: '해당 사용자는 이 파티의 멤버가 아닙니다.',
 					timestamp: '2025-07-03T10:00:00.000Z',
-					path: '/parties/1/members/me',
+					path: '/parties/1/members',
 				},
 			},
 		},
