@@ -6,6 +6,9 @@ export class LoginResponseDto {
 
 	@ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
 	accessToken: string;
+
+	@ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', required: false })
+	refreshToken?: string;
 }
 
 export class RegisterResponseDto {
@@ -32,6 +35,9 @@ export class AuthErrorResponseDto {
 
 	@ApiProperty({ example: 'Unauthorized' })
 	error: string;
+
+	@ApiProperty({ example: 'a-003', required: false })
+	errorCode?: string;
 }
 
 export class NicknameCheckErrorResponseDto {
@@ -43,4 +49,26 @@ export class NicknameCheckErrorResponseDto {
 
 	@ApiProperty({ example: 'Conflict' })
 	error: string;
+}
+
+export class RefreshTokenResponseDto {
+	@ApiProperty({ example: '새로운 액세스 토큰이 발급되었습니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+	accessToken: string;
+}
+
+export class TokenErrorResponseDto {
+	@ApiProperty({ example: 401 })
+	statusCode: number;
+
+	@ApiProperty({ example: '리프레시 토큰이 유효하지 않습니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'Unauthorized' })
+	error: string;
+
+	@ApiProperty({ example: 'a-005' })
+	errorCode: string;
 }

@@ -46,6 +46,10 @@ export class User {
 	@UpdateDateColumn({ name: 'updated_at', type: 'datetime' })
 	updatedAt: Date;
 
+	@ApiProperty({ description: 'Refresh token for authentication', required: false })
+	@Column({ nullable: true, type: 'varchar', length: 500, name: 'refresh_token' })
+	refreshToken: string;
+
 	/* 관계 */
 	@OneToMany(() => Party, (party) => party.creator)
 	createdParties: Party[];

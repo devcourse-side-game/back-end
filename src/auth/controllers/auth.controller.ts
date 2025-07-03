@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards, Headers } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
 	LoginDto,
@@ -10,6 +10,9 @@ import {
 	AuthErrorResponseDto,
 	NicknameCheckResponseDto,
 	NicknameCheckErrorResponseDto,
+	RefreshTokenDto,
+	RefreshTokenResponseDto,
+	TokenErrorResponseDto,
 } from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetUser } from '../decorator/get-user.decorator';
@@ -33,20 +36,28 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: '로그인 성공', type: LoginResponseDto })
 	@ApiResponse({ status: 401, description: '인증 실패', type: AuthErrorResponseDto })
 	async login(@Body() loginDto: LoginDto) {
-		const { accessToken } = await this.authService.login(loginDto);
+		const { accessToken, refreshToken } = await this.authService.login(loginDto);
 
-		return { message: '로그인 성공', accessToken };
+		return { message: '로그인 성공', accessToken, refreshToken };
 	}
 
 	@Post('logout')
 	@ApiBearerAuth('access-token')
 	@UseGuards(JwtAuthGuard)
-	@ApiOperation({ summary: '로그아웃', description: '현재 세션 종료' })
+	@ApiOperation({ summary: '로그아웃', description: '현재 세션 종료 및 리프레시 토큰 무효화' })
 	@ApiResponse({ status: 200, description: '로그아웃 성공', type: LogoutResponseDto })
 	async logout(@GetUser() user: any) {
-		// 클라이언트 측에서 토큰을 삭제하는 방식으로 구현
-		// 서버 측에서는 추가 작업 없이 성공 응답만 반환
-		return { message: '로그아웃 성공' };
+		// 리프레시 토큰 삭제
+		return await this.authService.logout(user.id);
+	}
+	
+	@Post('refresh')
+	@ApiOperation({ summary: '액세스 토큰 갱신', description: '리프레시 토큰을 사용하여 새 액세스 토큰 발급' })
+	@ApiResponse({ status: 200, description: '토큰 갱신 성공', type: RefreshTokenResponseDto })
+	@ApiResponse({ status: 401, description: '리프레시 토큰 유효하지 않음', type: TokenErrorResponseDto })
+	@ApiHeader({ name: 'WWW-Authenticate', description: '오류 유형 정보를 포함하는 헤더' })
+	async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+		return await this.authService.refreshAccessToken(refreshTokenDto);
 	}
 
 	@Get('nicknameCheck')

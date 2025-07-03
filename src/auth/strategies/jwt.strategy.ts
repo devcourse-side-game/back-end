@@ -2,8 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { User } from '../../users/entities/user.entity';
 import { Repository } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { AppException } from '../../common/exceptions/app.exception';
+import { ErrorCode } from '../../common/constants/error-codes';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -20,14 +22,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 	async validate(payload: any) {
 		try {
-			const user = await this.findUserId(payload.email);
+			const { email } = payload;
+
+			const user = await this.userRepository.findOneBy({ email });
 
 			if (!user) {
-				throw new UnauthorizedException('접근 권한이 없습니다.');
+				throw new AppException(ErrorCode.UNAUTHORIZED);
 			}
-			return { id: user.id, email: user.email };
 
+			return { id: user.id, email: user.email };
 		} catch (error) {
+			// 토큰 만료 오류 처리
+			if (error.name === 'TokenExpiredError') {
+				throw new AppException(ErrorCode.ACCESS_TOKEN_EXPIRED);
+			}
+			
+			// 토큰 검증 오류 처리
+			if (error.name === 'JsonWebTokenError') {
+				throw new AppException(ErrorCode.UNAUTHORIZED);
+			}
+			
+			// 기타 오류는 그대로 전파
 			throw error;
 		}
 	}
