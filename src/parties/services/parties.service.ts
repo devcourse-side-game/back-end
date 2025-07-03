@@ -116,7 +116,7 @@ export class PartiesService {
 			// 리더의 게임 프로필을 명확히 조회하여 맵에 포함
 			const leaderUserId = creatorId;
 			const leaderGameId = dto.gameId;
-			const leaderProfile = userGameProfile as { gameUsername: string; id: number }; // 타입 단언 추가
+                        const leaderProfile = userGameProfile;
 			const userGameProfilesMap = new Map<string, string>();
 			if (leaderProfile && leaderProfile.gameUsername) {
 				userGameProfilesMap.set(
