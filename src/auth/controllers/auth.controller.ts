@@ -29,8 +29,8 @@ export class AuthController {
 	@Post('register')
 	@HttpCode(201)
 	@ApiOperation({ summary: '회원가입', description: '새 사용자 계정 생성' })
-	@ApiResponse({ status: 201, description: '회원가입 성공', type: RegisterResponseDto })
-	@ApiResponse({ status: 409, description: '이미 존재하는 사용자명', type: NicknameCheckErrorResponseDto })
+	@ApiResponse({ status: 201, description: '회원가입이 완료되었습니다.', type: RegisterResponseDto })
+	@ApiResponse({ status: 409, description: '이미 존재하는 이메일입니다.', type: NicknameCheckErrorResponseDto })
 	async register(@Body() registerDto: RegisterDto) {
 		return await this.authService.register(registerDto);
 	}

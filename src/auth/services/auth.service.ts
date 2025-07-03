@@ -23,7 +23,7 @@ export class AuthService {
 
 		const existingUser = await this.userRepository.findOneBy({ email });
 		if (existingUser) {
-			throw new ConflictException('이미 존재하는 이메일입니다.');
+			throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,12 +44,12 @@ export class AuthService {
 
 		const user = await this.userRepository.findOneBy({ email });
 		if (!user) {
-			throw new UnauthorizedException('인증에 실패했습니다.');
+			throw new AppException(ErrorCode.USER_NOT_FOUND);
 		}
 
 		const isPasswordMatched = await bcrypt.compare(password, user.password);
 		if (!isPasswordMatched) {
-			throw new UnauthorizedException('인증에 실패했습니다.');
+			throw new AppException(ErrorCode.INVALID_PASSWORD);
 		}
 
 		return this.generateTokens({ id: user.id, username: user.username, email: user.email });
