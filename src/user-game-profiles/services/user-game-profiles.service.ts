@@ -24,6 +24,16 @@ export class UserGameProfilesService {
 		return this.userGameProfileRepository.find({ where: { id: In(profileIds) } });
 	}
 
+	private toUserGameProfileDto(profile: UserGameProfile): UserGameProfileDto {
+		const dto = new UserGameProfileDto();
+		dto.id = profile.id;
+		dto.userId = profile.userId;
+		dto.gameId = profile.gameId;
+		dto.gameUsername = profile.gameUsername;
+		dto.game = profile.game;
+		return dto;
+	}
+
 	async getUserGameProfiles(userId: number): Promise<UserGameProfileDto[]> {
 		const profiles = await this.userGameProfileRepository.find({
 			where: { userId },
@@ -34,15 +44,7 @@ export class UserGameProfilesService {
 			throw new AppException(ErrorCode.USER_GAME_PROFILE_NOT_FOUND);
 		}
 
-		return profiles.map((profile) => {
-			const dto = new UserGameProfileDto();
-			dto.id = profile.id;
-			dto.userId = profile.userId;
-			dto.gameId = profile.gameId;
-			dto.gameUsername = profile.gameUsername;
-			dto.game = profile.game;
-			return dto;
-		});
+		return profiles.map((profile) => this.toUserGameProfileDto(profile));
 	}
 
 	async getUserGameProfileByUsername(
@@ -59,13 +61,7 @@ export class UserGameProfilesService {
 			throw new AppException(ErrorCode.USER_GAME_PROFILE_NOT_FOUND);
 		}
 
-		const dto = new UserGameProfileDto();
-		dto.id = profile.id;
-		dto.userId = profile.userId;
-		dto.gameId = profile.gameId;
-		dto.gameUsername = profile.gameUsername;
-		dto.game = profile.game;
-		return dto;
+		return this.toUserGameProfileDto(profile);
 	}
 
 	async getUserGameProfilesByGame(userId: number, gameId: number): Promise<UserGameProfileDto[]> {
@@ -78,15 +74,7 @@ export class UserGameProfilesService {
 			throw new AppException(ErrorCode.USER_GAME_PROFILE_NOT_FOUND);
 		}
 
-		return profiles.map((profile) => {
-			const dto = new UserGameProfileDto();
-			dto.id = profile.id;
-			dto.userId = profile.userId;
-			dto.gameId = profile.gameId;
-			dto.gameUsername = profile.gameUsername;
-			dto.game = profile.game;
-			return dto;
-		});
+		return profiles.map((profile) => this.toUserGameProfileDto(profile));
 	}
 
 	async findOrCreateUserGameProfile(
@@ -125,27 +113,9 @@ export class UserGameProfilesService {
 			return new Map();
 		}
 
-		const userGameProfiles = await this.userGameProfileRepository
-			.createQueryBuilder('profile')
-			.where(
-				userGameInfos
-					.map(
-						(_, i) =>
-							`(profile.userId = :userId_${i} AND profile.gameId = :gameId_${i})`,
-					)
-					.join(' OR '),
-			)
-			.setParameters(
-				userGameInfos.reduce(
-					(params, info, i) => ({
-						...params,
-						[`userId_${i}`]: info.userId,
-						[`gameId_${i}`]: info.gameId,
-					}),
-					{},
-				),
-			)
-			.getMany();
+		const userGameProfiles = await this.userGameProfileRepository.find({
+			where: userGameInfos.map((info) => ({ userId: info.userId, gameId: info.gameId })),
+		});
 
 		return new Map(userGameProfiles.map((p) => [`${p.userId}-${p.gameId}`, p.gameUsername]));
 	}
