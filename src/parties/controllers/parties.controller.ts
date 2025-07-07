@@ -120,6 +120,32 @@ export class PartiesController {
 		return this.partiesService.createParty(createPartyDto, user.id);
 	}
 
+	@Get('me')
+	@ApiOperation({ summary: '내가 참여한 파티 목록 조회' })
+	@ApiOkResponse({
+		description: '사용자가 참여한 파티 목록을 반환합니다.',
+		type: [PartyListItemDto],
+	})
+	@ApiUnauthorizedResponse({
+		description: '인증되지 않은 사용자입니다.',
+		content: {
+			'application/json': {
+				example: {
+					success: false,
+					statusCode: 401,
+					errorCode: 'a-002',
+					message: '인증되지 않은 사용자입니다.',
+					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
+					timestamp: '2025-07-03T10:00:00.000Z',
+					path: '/parties/me',
+				},
+			},
+		},
+	})
+	async findMyParties(@GetUser() user: { id: number }): Promise<PartyListItemDto[]> {
+		return this.partiesService.findUserParties(user.id);
+	}
+
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
 	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })

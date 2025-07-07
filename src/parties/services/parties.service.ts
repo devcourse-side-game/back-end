@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AppException } from '../../common/exceptions/app.exception';
 import { ErrorCode } from '../../common/constants/error-codes';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, In, Repository } from 'typeorm';
 import { Party } from '../entities/party.entity';
 import { Game } from '../../games/entities/game.entity';
 import { User } from '../../users/entities/user.entity';
@@ -19,6 +19,8 @@ export class PartiesService {
 	constructor(
 		@InjectRepository(Party)
 		private readonly partyRepository: Repository<Party>,
+		@InjectRepository(PartyMember)
+		private readonly partyMemberRepository: Repository<PartyMember>,
 		private readonly userGameProfilesService: UserGameProfilesService,
 		private readonly dataSource: DataSource,
 	) {}
@@ -237,6 +239,67 @@ export class PartiesService {
 			order: { createdAt: 'DESC' },
 			skip: (page - 1) * limit,
 			take: limit,
+		});
+
+		const leaderInfos = parties
+			.map((party) => {
+				const leader = party.members.find((m) => m.isLeader);
+				return leader ? { userId: leader.userId, gameId: party.gameId } : null;
+			})
+			.filter((info): info is { userId: number; gameId: number } => info !== null);
+
+		const userGameProfilesMap =
+			await this.userGameProfilesService.getGameProfilesForUsers(leaderInfos);
+
+		return parties.map((party) => {
+			const leader = party.members.find((m) => m.isLeader);
+			const leaderGameUsername =
+				leader && leader.user
+					? userGameProfilesMap.get(`${leader.userId}-${party.gameId}`) || ''
+					: '';
+
+			return {
+				id: party.id,
+				title: party.title,
+				gameId: party.gameId,
+				gameBannerUrl: party.game?.bannerUrl || '',
+				creatorId: party.creatorId,
+				purposeTag: party.purposeTag,
+				maxParticipants: party.maxParticipants,
+				description: party.description,
+				isPrivate: party.isPrivate,
+				isCompleted: party.isCompleted,
+				createdAt: party.createdAt,
+				updatedAt: party.updatedAt,
+				leader:
+					leader && leader.user
+						? {
+								userId: leader.user.id,
+								username: leader.user.username,
+								gameUsername: leaderGameUsername,
+							}
+						: null,
+				currentMemberCount: party.members.length,
+			};
+		});
+	}
+
+	async findUserParties(userId: number): Promise<PartyListItemDto[]> {
+		const userPartyMemberships = await this.partyMemberRepository.find({
+			where: { userId },
+			select: ['partyId'],
+		});
+
+		if (userPartyMemberships.length === 0) {
+			return [];
+		}
+
+		const partyIds = userPartyMemberships.map((m) => m.partyId);
+
+		const parties = await this.partyRepository.find({
+			where: { id: In(partyIds) },
+			relations: ['game', 'members', 'members.user'],
+			order: { createdAt: 'DESC' },
 		});
 
 		const leaderInfos = parties
