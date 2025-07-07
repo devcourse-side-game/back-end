@@ -94,9 +94,9 @@ export class PartiesService {
 				);
 			}
 
-			const userGameProfilesMap = new Map<string, string>();
-			if (userGameProfile?.gameUsername) {
-				userGameProfilesMap.set(`${creatorId}-${dto.gameId}`, userGameProfile.gameUsername);
+			const userGameProfilesMap = new Map<number, string>();
+			if (userGameProfile?.id && userGameProfile?.gameUsername) {
+				userGameProfilesMap.set(userGameProfile.id, userGameProfile.gameUsername);
 			}
 
 			return this.toPartyWithMembersDto(createdParty, userGameProfilesMap);
@@ -110,19 +110,18 @@ export class PartiesService {
 		});
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
-		const memberInfos = (party.members || [])
-			.filter((m) => m.userId && party.gameId)
-			.map((m) => ({ userId: m.userId, gameId: party.gameId }));
-
-		const userGameProfilesMap =
-			await this.userGameProfilesService.getGameProfilesForUsers(memberInfos);
+		const profileIds = (party.members || [])
+			.map((m) => m.userGameProfileId)
+			.filter((id) => id) as number[];
+		const profiles = await this.userGameProfilesService.getProfilesByIds(profileIds);
+		const userGameProfilesMap = new Map(profiles.map((p) => [p.id, p.gameUsername]));
 
 		return this.toPartyWithMembersDto(party, userGameProfilesMap);
 	}
 
 	toPartyWithMembersDto(
 		party: Party,
-		userGameProfilesMap?: Map<string, string>,
+		userGameProfilesMap?: Map<number, string>,
 	): PartyWithMembersDto {
 		const { creator, members, ...partyDetails } = party;
 		return {
@@ -142,7 +141,9 @@ export class PartiesService {
 				isLeader: m.isLeader,
 				joinedAt: m.joinedAt,
 				leftAt: m.leftAt,
-				gameUsername: userGameProfilesMap?.get(`${m.userId}-${party.gameId}`) ?? '',
+				gameUsername: m.userGameProfileId
+					? (userGameProfilesMap?.get(m.userGameProfileId) ?? '')
+					: '',
 			})),
 		};
 	}
@@ -199,12 +200,11 @@ export class PartiesService {
 
 			const updatedPartyEntity = await manager.save(party);
 
-			const memberInfos = (updatedPartyEntity.members || [])
-				.filter((m) => m.userId && updatedPartyEntity.gameId)
-				.map((m) => ({ userId: m.userId, gameId: updatedPartyEntity.gameId }));
-
-			const userGameProfilesMap =
-				await this.userGameProfilesService.getGameProfilesForUsers(memberInfos);
+			const profileIds = (updatedPartyEntity.members || [])
+				.map((m) => m.userGameProfileId)
+				.filter((id) => id) as number[];
+			const profiles = await this.userGameProfilesService.getProfilesByIds(profileIds);
+			const userGameProfilesMap = new Map(profiles.map((p) => [p.id, p.gameUsername]));
 
 			return this.toPartyWithMembersDto(updatedPartyEntity, userGameProfilesMap);
 		});
