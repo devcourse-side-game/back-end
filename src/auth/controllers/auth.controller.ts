@@ -70,13 +70,30 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: '토큰 갱신 성공', type: RefreshTokenResponseDto })
 	@ApiResponse({ status: 401, description: '리프레시 토큰 유효하지 않음', type: TokenErrorResponseDto })
 	@ApiCookieAuth('refreshToken')
-	async refreshToken(@Req() req: Request) {
+	async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
 		const refreshToken = req.cookies?.refreshToken;
 		if (!refreshToken) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
-		return await this.authService.refreshAccessToken({refreshToken});
+		try {
+			return await this.authService.refreshAccessToken({refreshToken});
+		} catch (error) {
+			// 리프레시 토큰 만료 시 쿠키 삭제
+			if (error instanceof AppException && error.getResponse()['errorCode'] === ErrorCode.REFRESH_TOKEN_EXPIRED) {
+				// 쿠키 삭제
+				res.clearCookie('refreshToken', {
+					httpOnly: true,
+					secure: false,
+					path: '/api/auth/refresh',
+					sameSite: 'strict'
+				});
+				
+				// 에러는 그대로 전파하여 클라이언트에게 만료 메시지 전달
+				throw error;
+			}
+			throw error;
+		}
 	}
 
 	@Get('nicknameCheck')
