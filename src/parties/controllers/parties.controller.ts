@@ -32,7 +32,7 @@ import {
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
-@ApiTags('Parties')
+@ApiTags('parties')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('parties')

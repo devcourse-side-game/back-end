@@ -27,7 +27,7 @@ import { MemberListResponseDto } from '../dto/response.dto';
 import { AppException } from 'src/common/exceptions/app.exception';
 import { ErrorCode } from 'src/common/constants/error-codes';
 
-@ApiTags('PartyMembers')
+@ApiTags('partyMembers')
 @Controller('parties/:partyId/members')
 export class PartyMembersController {
 	constructor(private readonly partyMembersService: PartyMembersService) {}
