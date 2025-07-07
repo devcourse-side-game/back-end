@@ -32,14 +32,14 @@ import {
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
-@ApiTags('Parties')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@ApiTags('parties')
 @Controller('parties')
 export class PartiesController {
 	constructor(private readonly partiesService: PartiesService) {}
 
 	@Post()
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 생성' })
 	@ApiCreatedResponse({
 		description: '파티가 성공적으로 생성되었습니다.',
@@ -121,6 +121,8 @@ export class PartiesController {
 	}
 
 	@Get('me')
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '내가 참여한 파티 목록 조회' })
 	@ApiOkResponse({
 		description: '사용자가 참여한 파티 목록을 반환합니다.',
@@ -164,22 +166,6 @@ export class PartiesController {
 	@Get(':id')
 	@ApiOperation({ summary: '특정 파티 조회' })
 	@ApiOkResponse({ description: '파티 + 멤버 정보를 반환합니다.', type: PartyWithMembersDto })
-	@ApiUnauthorizedResponse({
-		description: '인증되지 않은 사용자입니다.',
-		content: {
-			'application/json': {
-				example: {
-					success: false,
-					statusCode: 401,
-					errorCode: 'a-002',
-					message: '인증되지 않은 사용자입니다.',
-					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
-					timestamp: '2025-07-03T10:00:00.000Z',
-					path: '/parties/1',
-				},
-			},
-		},
-	})
 	@ApiNotFoundResponse({
 		description: '파티를 찾을 수 없습니다.',
 		content: {
@@ -201,6 +187,8 @@ export class PartiesController {
 	}
 
 	@Patch(':id')
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 정보 수정' })
 	@ApiOkResponse({
 		description: '수정된 파티 정보를 반환합니다.',
@@ -294,6 +282,8 @@ export class PartiesController {
 	}
 
 	@Delete(':id')
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 삭제' })
 	@ApiOkResponse({
 		description: '파티가 성공적으로 삭제되었습니다.',
@@ -366,22 +356,6 @@ export class PartiesController {
 		description: '파티 목록을 반환합니다.',
 		type: [PartyListItemDto],
 	})
-	@ApiUnauthorizedResponse({
-		description: '인증되지 않은 사용자입니다.',
-		content: {
-			'application/json': {
-				example: {
-					success: false,
-					statusCode: 401,
-					errorCode: 'a-002',
-					message: '인증되지 않은 사용자입니다.',
-					detail: '유효한 인증 토큰이 제공되지 않았습니다.',
-					timestamp: '2025-07-03T10:00:00.000Z',
-					path: '/parties',
-				},
-			},
-		},
-	})
 	@ApiQuery({ name: 'gameId', required: false, type: Number, description: '게임 ID' })
 	@ApiQuery({ name: 'isCompleted', required: false, type: Boolean, description: '완료 여부' })
 	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
@@ -404,6 +378,8 @@ export class PartiesController {
 	}
 
 	@Patch(':id/complete')
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
 	@ApiOperation({ summary: '파티 완료 처리' })
 	@ApiOkResponse({
 		description: '파티가 완료 처리되었습니다.',
