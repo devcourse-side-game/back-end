@@ -284,7 +284,17 @@ export class PartiesService {
 		});
 	}
 
-	async findUserParties(userId: number): Promise<PartyListItemDto[]> {
+	async findUserParties(
+		userId: number,
+		query: {
+			isCompleted?: boolean;
+			isPrivate?: boolean;
+			page?: number;
+			limit?: number;
+		},
+	): Promise<PartyListItemDto[]> {
+		const { isCompleted, isPrivate, page = 1, limit = 20 } = query;
+
 		const userPartyMemberships = await this.partyMemberRepository.find({
 			where: { userId },
 			select: ['partyId'],
@@ -296,10 +306,16 @@ export class PartiesService {
 
 		const partyIds = userPartyMemberships.map((m) => m.partyId);
 
+		const where: FindOptionsWhere<Party> = { id: In(partyIds) };
+		if (isCompleted !== undefined) where.isCompleted = isCompleted;
+		if (isPrivate !== undefined) where.isPrivate = isPrivate;
+
 		const parties = await this.partyRepository.find({
-			where: { id: In(partyIds) },
+			where,
 			relations: ['game', 'members', 'members.user'],
 			order: { createdAt: 'DESC' },
+			skip: (page - 1) * limit,
+			take: limit,
 		});
 
 		const leaderInfos = parties

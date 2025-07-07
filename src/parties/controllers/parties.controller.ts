@@ -32,7 +32,7 @@ import {
 import { PartyWithMembersDto } from '../dto/party-with-members.dto';
 import { GetUser } from '../../auth/decorator/get-user.decorator';
 
-@ApiTags('parties')
+@ApiTags('Parties')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('parties')
@@ -142,8 +142,23 @@ export class PartiesController {
 			},
 		},
 	})
-	async findMyParties(@GetUser() user: { id: number }): Promise<PartyListItemDto[]> {
-		return this.partiesService.findUserParties(user.id);
+	@ApiQuery({ name: 'isCompleted', required: false, type: Boolean, description: '완료 여부' })
+	@ApiQuery({ name: 'isPrivate', required: false, type: Boolean, description: '비공개 여부' })
+	@ApiQuery({ name: 'page', required: false, type: Number, description: '페이지 번호' })
+	@ApiQuery({ name: 'limit', required: false, type: Number, description: '페이지 당 개수' })
+	async findMyParties(
+		@GetUser() user: { id: number },
+		@Query('isCompleted') isCompleted?: boolean,
+		@Query('isPrivate') isPrivate?: boolean,
+		@Query('page') page = 1,
+		@Query('limit') limit = 20,
+	): Promise<PartyListItemDto[]> {
+		return this.partiesService.findUserParties(user.id, {
+			isCompleted,
+			isPrivate,
+			page,
+			limit,
+		});
 	}
 
 	@Get(':id')
