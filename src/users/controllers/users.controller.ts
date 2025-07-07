@@ -14,6 +14,8 @@ import {
 	DeleteAccountResponseDto,
 	UsersErrorResponseDto,
 	PasswordErrorResponseDto,
+	UserAlreadyExistsResponseDto,
+	EmailAlreadyExistsResponseDto,
 } from '../dto';
 
 @ApiTags('users')
@@ -30,7 +32,7 @@ export class UsersController {
 		description: '사용자 정보 조회 성공',
 		type: UserProfileResponseDto,
 	})
-	@ApiResponse({ status: 404, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
+	@ApiResponse({ status: 401, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
 	async getProfile(@GetUser() jwtPayload: JwtPayload) {
 		const userId = jwtPayload.id; // JWT에서 추출된 사용자 ID
 		const user = await this.usersService.getProfile(userId);
@@ -47,7 +49,9 @@ export class UsersController {
 		description: '사용자 정보 수정 성공',
 		type: UpdateProfileResponseDto,
 	})
-	@ApiResponse({ status: 404, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
+	@ApiResponse({ status: 401, description: '사용자를 찾을 수 없음', type: UsersErrorResponseDto })
+	@ApiResponse({ status: 401, description: '이미 사용 중인 사용자 이름입니다.', type: UserAlreadyExistsResponseDto })
+	@ApiResponse({ status: 409, description: '이미 존재하는 이메일입니다.', type: EmailAlreadyExistsResponseDto })
 	async updateProfile(@GetUser() jwtPayload: JwtPayload, @Body() updateUserDto: UpdateUserDto) {
 		const userId = jwtPayload.id; // JWT에서 추출된 사용자 ID
 		await this.usersService.updateProfile(userId, updateUserDto);
@@ -62,7 +66,7 @@ export class UsersController {
 		type: ChangePasswordResponseDto,
 	})
 	@ApiResponse({
-		status: 400,
+		status: 401,
 		description: '현재 비밀번호가 일치하지 않음',
 		type: PasswordErrorResponseDto,
 	})

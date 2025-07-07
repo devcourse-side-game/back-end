@@ -5,6 +5,8 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { AppException } from 'src/common/exceptions/app.exception';
+import { ErrorCode } from 'src/common/constants/error-codes';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +21,7 @@ export class UsersService {
 	async findById(id: number): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { id } });
 		if (!user) {
-			throw new NotFoundException('사용자를 찾을 수 없습니다.');
+			throw new AppException(ErrorCode.USER_NOT_FOUND);
 		}
 		return user;
 	}
@@ -30,7 +32,7 @@ export class UsersService {
   async getProfile(userId: number): Promise<User> {
     const user = await this.findById(userId);
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new AppException(ErrorCode.USER_NOT_FOUND);
     }
     return user;
   }
@@ -41,7 +43,7 @@ export class UsersService {
   async updateProfile(userId: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(userId);
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new AppException(ErrorCode.USER_NOT_FOUND);
     }
     
     // 업데이트할 필드가 있는 경우에만 업데이트
@@ -62,7 +64,7 @@ export class UsersService {
         where: { email: updateUserDto.email } 
       });
       if (existingUser && existingUser.id !== userId) {
-        throw new UnauthorizedException('이미 사용 중인 이메일입니다.');
+        throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
       }
       user.email = updateUserDto.email;
     }
@@ -86,7 +88,7 @@ export class UsersService {
     );
     
     if (!isPasswordValid) {
-      throw new BadRequestException('현재 비밀번호가 일치하지 않습니다.');
+      throw new AppException(ErrorCode.INVALID_PASSWORD);
     }
     
     // 새 비밀번호 해싱
