@@ -78,7 +78,6 @@ export class AuthService {
 		const accessToken = await this.generateToken(payload, jwt_expires_in);
 
 		// 리프레시 토큰 생성
-		console.log(process.env.JWT_REFRESH_EXPIRES_IN)
 		const jwt_refresh_expires_in = process.env.JWT_REFRESH_EXPIRES_IN ?? '7d';
 		const refreshToken = await this.generateToken(payload, jwt_refresh_expires_in);
 
