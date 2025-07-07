@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Post, Query, Res, Req, UseGuards } from '@nestjs/common';
+import { Response, Request } from 'express';
+import { ApiBearerAuth, ApiCookieAuth, ApiHeader, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import {
 	LoginDto,
@@ -10,9 +11,15 @@ import {
 	AuthErrorResponseDto,
 	NicknameCheckResponseDto,
 	NicknameCheckErrorResponseDto,
+	RefreshTokenDto,
+	RefreshTokenResponseDto,
+	TokenErrorResponseDto,
 } from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetUser } from '../decorator/get-user.decorator';
+import { AppException } from 'src/common/exceptions/app.exception';
+import { ErrorCode } from 'src/common/constants/error-codes';
+import { ref } from 'process';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -29,11 +36,20 @@ export class AuthController {
 	}
 
 	@Post('login')
+	@HttpCode(200)
 	@ApiOperation({ summary: '로그인', description: '사용자 인증 및 토큰 발급' })
 	@ApiResponse({ status: 200, description: '로그인 성공', type: LoginResponseDto })
 	@ApiResponse({ status: 401, description: '인증 실패', type: AuthErrorResponseDto })
-	async login(@Body() loginDto: LoginDto) {
-		const { accessToken } = await this.authService.login(loginDto);
+	async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+		const { accessToken, refreshToken } = await this.authService.login(loginDto);
+
+		res.cookie('refreshToken', refreshToken, {
+			httpOnly: true,
+			secure: false,
+			path: '/api/auth/refresh',
+			sameSite: 'strict',
+			maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+		});
 
 		return { message: '로그인 성공', accessToken };
 	}
@@ -41,12 +57,26 @@ export class AuthController {
 	@Post('logout')
 	@ApiBearerAuth('access-token')
 	@UseGuards(JwtAuthGuard)
-	@ApiOperation({ summary: '로그아웃', description: '현재 세션 종료' })
+	@ApiOperation({ summary: '로그아웃', description: '현재 세션 종료 및 리프레시 토큰 무효화' })
 	@ApiResponse({ status: 200, description: '로그아웃 성공', type: LogoutResponseDto })
 	async logout(@GetUser() user: any) {
-		// 클라이언트 측에서 토큰을 삭제하는 방식으로 구현
-		// 서버 측에서는 추가 작업 없이 성공 응답만 반환
-		return { message: '로그아웃 성공' };
+		// 리프레시 토큰 삭제
+		return await this.authService.logout(user.id);
+	}
+	
+	@Post('refresh')
+	@HttpCode(200)
+	@ApiOperation({ summary: '액세스 토큰 갱신', description: '리프레시 토큰을 사용하여 새 액세스 토큰 발급' })
+	@ApiResponse({ status: 200, description: '토큰 갱신 성공', type: RefreshTokenResponseDto })
+	@ApiResponse({ status: 401, description: '리프레시 토큰 유효하지 않음', type: TokenErrorResponseDto })
+	@ApiCookieAuth('refreshToken')
+	async refreshToken(@Req() req: Request) {
+		const refreshToken = req.cookies?.refreshToken;
+		if (!refreshToken) {
+            throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+
+		return await this.authService.refreshAccessToken({refreshToken});
 	}
 
 	@Get('nicknameCheck')
