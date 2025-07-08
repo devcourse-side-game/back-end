@@ -14,6 +14,9 @@ async function bootstrap() {
 		.addTag('auth', '인증 관리 API')
 		.addTag('users', '사용자 관리 API')
 		.addTag('parties', '파티 관리 API')
+		.addTag('partyMembers', '파티 멤버 관리 API')
+		.addTag('games', '게임 관리 API')
+		.addTag('userGameProfiles', '사용자 게임 프로필 관리 API')
 		.addTag('likes', '좋아요 관리 API')
 		.addBearerAuth(
 			{

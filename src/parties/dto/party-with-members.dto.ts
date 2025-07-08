@@ -18,6 +18,9 @@ export class PartyMemberSummaryDto {
 
 	@ApiProperty({ required: false })
 	leftAt?: Date;
+
+	@ApiProperty({ example: 'pro_gamer123', description: '게임 내 닉네임' })
+	gameUsername: string;
 }
 
 // 파티에서만 사용하는 생성자 정보 DTO (password 등 민감 정보 제외)
