@@ -23,7 +23,7 @@ export class AuthService {
 
 		const existingUser = await this.userRepository.findOneBy({ email });
 		if (existingUser) {
-			throw new ConflictException('이미 존재하는 이메일입니다.');
+			throw new AppException(ErrorCode.USER_ALREADY_EXISTS);
 		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,12 +44,12 @@ export class AuthService {
 
 		const user = await this.userRepository.findOneBy({ email });
 		if (!user) {
-			throw new UnauthorizedException('인증에 실패했습니다.');
+			throw new AppException(ErrorCode.USER_NOT_FOUND);
 		}
 
 		const isPasswordMatched = await bcrypt.compare(password, user.password);
 		if (!isPasswordMatched) {
-			throw new UnauthorizedException('인증에 실패했습니다.');
+			throw new AppException(ErrorCode.INVALID_PASSWORD);
 		}
 
 		return this.generateTokens({ id: user.id, username: user.username, email: user.email });
@@ -74,11 +74,11 @@ export class AuthService {
 	/* 토큰 생성 (액세스 토큰 + 리프레시 토큰) */
 	async generateTokens(payload: { id: number; username: string; email: string }) {
 		// 액세스 토큰 생성
-		const jwt_expires_in = process.env.JWT_EXPIRES_IN || '15m';
+		const jwt_expires_in = process.env.JWT_EXPIRES_IN ?? '15m';
 		const accessToken = await this.generateToken(payload, jwt_expires_in);
 
 		// 리프레시 토큰 생성
-		const jwt_refresh_expires_in = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+		const jwt_refresh_expires_in = process.env.JWT_REFRESH_EXPIRES_IN ?? '7d';
 		const refreshToken = await this.generateToken(payload, jwt_refresh_expires_in);
 
 		// 리프레시 토큰 데이터베이스에 저장
@@ -94,7 +94,7 @@ export class AuthService {
 		try {
 			// 리프레시 토큰 검증
 			const payload = this.jwtService.verify(refreshToken, {
-				secret: process.env.JWT_SECRET || 'gamePartySecretKey'
+				secret: process.env.JWT_SECRET ?? 'gamePartySecretKey'
 			});
 			
 			// 사용자 조회
@@ -125,6 +125,22 @@ export class AuthService {
 
 			// JWT 검증 오류 처리
 			if (error.name === 'TokenExpiredError') {
+				try {
+					// 만료된 토큰에서 페이로드 추출 (verify 옵션에서 만료 검증 무시)
+					const decodedToken = this.jwtService.decode(refreshToken);
+					if (decodedToken && typeof decodedToken === 'object' && decodedToken.email) {
+						// 사용자 찾기
+						const user = await this.userRepository.findOneBy({ email: decodedToken.email });
+						if (user) {
+							// 리프레시 토큰 삭제
+							await this.userRepository.update(user.id, { refreshToken: '' });
+						}
+					}
+				} catch (decodeError) {
+					// 디코딩 실패 시 무시하고 계속 진행
+					console.error('Failed to decode expired token:', decodeError);
+				}
+				
 				throw new AppException(ErrorCode.REFRESH_TOKEN_EXPIRED);
 			}
 			

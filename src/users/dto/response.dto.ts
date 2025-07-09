@@ -49,12 +49,36 @@ export class UsersErrorResponseDto {
 }
 
 export class PasswordErrorResponseDto {
-	@ApiProperty({ example: 400 })
+	@ApiProperty({ example: 401 })
 	statusCode: number;
 
 	@ApiProperty({ example: '현재 비밀번호가 일치하지 않습니다.' })
 	message: string;
 
-	@ApiProperty({ example: 'Bad Request' })
+	@ApiProperty({ example: 'Unauthorized' })
 	error: string;
 }
+
+export class UserAlreadyExistsResponseDto {
+	@ApiProperty({ example: 401 })
+	statusCode: number;
+
+	@ApiProperty({ example: '이미 사용 중인 사용자 이름입니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'Unauthorized' })
+	error: string;
+}
+
+export class EmailAlreadyExistsResponseDto {
+	@ApiProperty({ example: 409 })
+	statusCode: number;
+
+	@ApiProperty({ example: '이미 사용 중인 이메일입니다.' })
+	message: string;
+
+	@ApiProperty({ example: 'Conflict' })
+	error: string;
+}
+	
+	

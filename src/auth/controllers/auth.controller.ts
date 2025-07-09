@@ -29,8 +29,8 @@ export class AuthController {
 	@Post('register')
 	@HttpCode(201)
 	@ApiOperation({ summary: '회원가입', description: '새 사용자 계정 생성' })
-	@ApiResponse({ status: 201, description: '회원가입 성공', type: RegisterResponseDto })
-	@ApiResponse({ status: 409, description: '이미 존재하는 사용자명', type: NicknameCheckErrorResponseDto })
+	@ApiResponse({ status: 201, description: '회원가입이 완료되었습니다.', type: RegisterResponseDto })
+	@ApiResponse({ status: 409, description: '이미 존재하는 이메일입니다.', type: NicknameCheckErrorResponseDto })
 	async register(@Body() registerDto: RegisterDto) {
 		return await this.authService.register(registerDto);
 	}
@@ -70,13 +70,30 @@ export class AuthController {
 	@ApiResponse({ status: 200, description: '토큰 갱신 성공', type: RefreshTokenResponseDto })
 	@ApiResponse({ status: 401, description: '리프레시 토큰 유효하지 않음', type: TokenErrorResponseDto })
 	@ApiCookieAuth('refreshToken')
-	async refreshToken(@Req() req: Request) {
+	async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
 		const refreshToken = req.cookies?.refreshToken;
 		if (!refreshToken) {
             throw new AppException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
-		return await this.authService.refreshAccessToken({refreshToken});
+		try {
+			return await this.authService.refreshAccessToken({refreshToken});
+		} catch (error) {
+			// 리프레시 토큰 만료 시 쿠키 삭제
+			if (error instanceof AppException && error.getResponse()['errorCode'] === ErrorCode.REFRESH_TOKEN_EXPIRED) {
+				// 쿠키 삭제
+				res.clearCookie('refreshToken', {
+					httpOnly: true,
+					secure: false,
+					path: '/api/auth/refresh',
+					sameSite: 'strict'
+				});
+				
+				// 에러는 그대로 전파하여 클라이언트에게 만료 메시지 전달
+				throw error;
+			}
+			throw error;
+		}
 	}
 
 	@Get('nicknameCheck')

@@ -16,10 +16,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
-			secretOrKey: process.env.JWT_SECRET || 'gamePartySecretKey',
+			secretOrKey: process.env.JWT_SECRET ?? 'gamePartySecretKey',
 		});
 	}
 
+	/**
+	 * validate메서드는 토큰의 유효성을 검사하는 것이 아닌, 토큰이 유효하다면 토큰에 포함된 사용자 정보를 반환하는 역할을 합니다.
+	 */
 	async validate(payload: any) {
 		try {
 			const { email } = payload;
@@ -31,18 +34,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 			}
 
 			return { id: user.id, email: user.email };
+
 		} catch (error) {
-			// 토큰 만료 오류 처리
-			if (error.name === 'TokenExpiredError') {
-				throw new AppException(ErrorCode.ACCESS_TOKEN_EXPIRED);
-			}
-			
-			// 토큰 검증 오류 처리
-			if (error.name === 'JsonWebTokenError') {
-				throw new AppException(ErrorCode.UNAUTHORIZED);
-			}
-			
-			// 기타 오류는 그대로 전파
 			throw error;
 		}
 	}
