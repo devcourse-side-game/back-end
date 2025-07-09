@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: game-party-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "4545:3000"
+    networks:
+      - game-party-net
+networks:
+  game-party-net:
+    driver: bridge
