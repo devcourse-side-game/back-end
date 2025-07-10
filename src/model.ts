@@ -13,5 +13,6 @@ export const TypeOrmConfig = TypeOrmModule.forRootAsync({
 		database: configService.get('DATABASE_NAME'),
 		entities: [__dirname + '/**/*.entity.{js,ts}'],
 		synchronize: true, // 개발 환경에서만 true로 설정
-	})
+		timezone: 'asia/Seoul', // MySQL 서버의 시간대 설정
+	}),
 });

@@ -84,7 +84,7 @@ export class PartiesService {
 
 			const createdParty = await manager.findOne(Party, {
 				where: { id: newParty.id },
-				relations: ['creator', 'game', 'members', 'members.user'],
+				relations: ['game', 'members', 'members.user'],
 			});
 
 			if (!createdParty) {
@@ -106,7 +106,7 @@ export class PartiesService {
 	async findPartyById(id: number): Promise<PartyWithMembersDto> {
 		const party = await this.partyRepository.findOne({
 			where: { id },
-			relations: ['creator', 'game', 'members', 'members.user'],
+			relations: ['game', 'members', 'members.user'],
 		});
 		if (!party) throw new AppException(ErrorCode.PARTY_NOT_FOUND);
 
@@ -123,17 +123,23 @@ export class PartiesService {
 		party: Party,
 		userGameProfilesMap?: Map<number, string>,
 	): PartyWithMembersDto {
-		const { creator, members, ...partyDetails } = party;
+		const { members, creatorId, ...partyDetails } = party;
+		const leader = members?.find((m) => m.isLeader);
+		const leaderGameUsername = leader?.userGameProfileId
+			? (userGameProfilesMap?.get(leader.userGameProfileId) ?? '')
+			: '';
+
 		return {
 			...partyDetails,
-			creator: creator
-				? {
-						id: creator.id,
-						username: creator.username,
-						email: creator.email,
-						profileImage: creator.profileImage,
-					}
-				: { id: 0, username: '', email: '', profileImage: '' },
+			leaderId: leader?.userId ?? 0,
+			leader:
+				leader && leader.user
+					? {
+							userId: leader.user.id,
+							username: leader.user.username,
+							gameUsername: leaderGameUsername,
+						}
+					: null,
 			members: (members || []).map((m) => ({
 				id: m.id,
 				userId: m.userId,
@@ -156,7 +162,7 @@ export class PartiesService {
 		return this.dataSource.transaction(async (manager) => {
 			const party = await manager.findOne(Party, {
 				where: { id: partyId },
-				relations: ['creator', 'game', 'members', 'members.user'],
+				relations: ['game', 'members', 'members.user'],
 			});
 
 			if (!party) {
@@ -178,11 +184,23 @@ export class PartiesService {
 						'선택한 게임 프로필이 유효하지 않습니다.',
 					);
 				}
+				// 현재 사용자(파티 생성자)의 파티 멤버 프로필도 업데이트
+				await manager.update(
+					PartyMember,
+					{ partyId, userId },
+					{ userGameProfileId: profile.id },
+				);
 			} else if (dto.gameUsername) {
-				await this.userGameProfilesService.findOrCreateUserGameProfile(
+				const profile = await this.userGameProfilesService.findOrCreateUserGameProfile(
 					userId,
 					party.gameId,
 					dto.gameUsername,
+				);
+				// 현재 사용자(파티 생성자)의 파티 멤버 프로필도 업데이트
+				await manager.update(
+					PartyMember,
+					{ partyId, userId },
+					{ userGameProfileId: profile.id },
 				);
 			}
 
@@ -263,7 +281,7 @@ export class PartiesService {
 				title: party.title,
 				gameId: party.gameId,
 				gameBannerUrl: party.game?.bannerUrl || '',
-				creatorId: party.creatorId,
+				leaderId: leader?.userId ?? 0,
 				purposeTag: party.purposeTag,
 				maxParticipants: party.maxParticipants,
 				description: party.description,
@@ -340,7 +358,7 @@ export class PartiesService {
 				title: party.title,
 				gameId: party.gameId,
 				gameBannerUrl: party.game?.bannerUrl || '',
-				creatorId: party.creatorId,
+				leaderId: leader?.userId ?? 0,
 				purposeTag: party.purposeTag,
 				maxParticipants: party.maxParticipants,
 				description: party.description,

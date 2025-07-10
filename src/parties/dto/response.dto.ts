@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PartyCreatorDto } from './party-with-members.dto';
 
 export class PartyListLeaderDto {
 	@ApiProperty({ example: 1, description: '리더 유저 ID' })
@@ -28,8 +27,8 @@ export class PartyListItemDto {
 	})
 	gameBannerUrl: string;
 
-	@ApiProperty({ example: 1, description: '파티장(생성자) ID' })
-	creatorId: number;
+	@ApiProperty({ example: 1, description: '파티 리더 ID' })
+	leaderId: number;
 
 	@ApiPropertyOptional({ example: '레이드', description: '파티 목적 태그' })
 	purposeTag?: string;
@@ -111,8 +110,8 @@ export class PartyDto {
 	@ApiProperty({ example: false })
 	isPrivate: boolean;
 
-	@ApiProperty({ type: () => PartyCreatorDto, description: '파티 생성자 정보' })
-	creator: PartyCreatorDto;
+	@ApiProperty({ type: () => PartyListLeaderDto, description: '파티 리더 정보', required: false })
+	leader: PartyListLeaderDto | null;
 
 	@ApiProperty({ example: '2025-06-03T14:30:00+09:00' })
 	createdAt: string;

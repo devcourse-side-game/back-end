@@ -8,6 +8,17 @@ services:
       - .env
     ports:
       - "4545:4545"
+    volumes:
+      # Synology NAS의 SSL 인증서 마운트
+      - /volume1/docker/ssl/nas.stann.kr/cert.pem:/etc/ssl/certs/cert.pem:ro
+      - /volume1/docker/ssl/nas.stann.kr/privkey.pem:/etc/ssl/private/privkey.pem:ro
+      - /volume1/docker/ssl/nas.stann.kr/chain.pem:/etc/ssl/certs/chain.pem:ro
+    environment:
+      # SSL 인증서 경로 환경변수
+      SSL_ENABLED: "true"
+      SSL_CERT_PATH: /etc/ssl/certs/cert.pem
+      SSL_KEY_PATH: /etc/ssl/private/privkey.pem
+      SSL_CA_PATH: /etc/ssl/certs/chain.pem
     networks:
       - game-party-net
 networks:

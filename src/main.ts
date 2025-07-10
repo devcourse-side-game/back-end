@@ -4,9 +4,33 @@ import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppExceptionFilter } from './common/filters/app-exception.filters';
+import { readFileSync } from 'fs';
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+	let httpsOptions: any = undefined;
+
+	// SSL 인증서 파일이 존재하는 경우 HTTPS 설정
+	if (process.env.SSL_CERT_PATH && process.env.SSL_KEY_PATH) {
+		try {
+			httpsOptions = {
+				key: readFileSync(process.env.SSL_KEY_PATH),
+				cert: readFileSync(process.env.SSL_CERT_PATH),
+				...(process.env.SSL_CA_PATH && {
+					ca: readFileSync(process.env.SSL_CA_PATH),
+				}), // ca 옵션 동적 추가
+			};
+			console.log('SSL 인증서를 찾았습니다. HTTPS 서버로 시작합니다.');
+		} catch (error) {
+			console.warn(
+				'SSL 인증서 파일을 읽을 수 없습니다. HTTP 서버로 시작합니다.',
+				error instanceof Error ? error.message : error,
+			);
+		}
+	}
+
+	const app = await NestFactory.create(AppModule, {
+		httpsOptions,
+	});
 
 	// 쿠키 파서 미들웨어 등록
 	app.use(cookieParser());
@@ -58,9 +82,14 @@ async function bootstrap() {
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('gameParty-api-docs', app, document);
 
-	await app.listen(process.env.PORT ?? 3000);
+	await app.listen(process.env.PORT ?? 4545);
 
-	console.log(`애플리케이션이 실행 중입니다: ${await app.getUrl()}`);
-	console.log(`Swagger 문서: ${await app.getUrl()}/gameParty-api-docs`);
+	const protocol = httpsOptions ? 'https' : 'http';
+	const port = process.env.PORT ?? 4545;
+	console.log(`애플리케이션이 ${protocol}://localhost:${port} 에서 실행 중입니다.`);
+	console.log(`Swagger 문서: ${protocol}://localhost:${port}/gameParty-api-docs`);
 }
-bootstrap();
+bootstrap().catch((error) => {
+	console.error('애플리케이션 시작 중 오류 발생:', error);
+	process.exit(1);
+});

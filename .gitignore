@@ -45,6 +45,16 @@ swagger-spec.json
 .env.production.local
 .env.local
 
+# SSL 인증서 파일들 (보안상 Git에 포함하지 않음)
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+/ssl/
+/certs/
+/certificates/
+
 # temp directory
 .temp
 .tmp
