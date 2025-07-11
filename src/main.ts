@@ -49,8 +49,11 @@ async function bootstrap() {
 	app.useGlobalFilters(new AppExceptionFilter());
 
 	// CORS 설정
+	const isProduction = process.env.NODE_ENV === 'production';
+	const githubPagesOrigin = 'https://devcourse-side-game.github.io'; // 여기에 실제 GitHub Pages 주소를 입력하세요.
+
 	app.enableCors({
-		origin: true,
+		origin: isProduction ? githubPagesOrigin : true, // 운영 환경에서는 특정 도메인만 허용
 		credentials: true,
 	});
 

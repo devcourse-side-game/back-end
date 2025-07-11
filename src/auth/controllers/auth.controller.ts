@@ -43,12 +43,16 @@ export class AuthController {
 	async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
 		const { accessToken, refreshToken } = await this.authService.login(loginDto);
 
+		const isSecure = process.env.SSL_ENABLED === 'true';
+		const cookieDomain = process.env.COOKIE_DOMAIN;
+
 		res.cookie('refreshToken', refreshToken, {
 			httpOnly: true,
-			secure: false,
+			secure: isSecure,
 			path: '/api/auth/refresh',
-			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+			sameSite: isSecure ? 'none' : 'strict',
+			maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+			...(cookieDomain && { domain: cookieDomain }),
 		});
 
 		return { message: '로그인 성공', accessToken };
@@ -77,18 +81,21 @@ export class AuthController {
         }
 
 		try {
-			return await this.authService.refreshAccessToken({refreshToken});
+			return await this.authService.refreshAccessToken({ refreshToken });
 		} catch (error) {
 			// 리프레시 토큰 만료 시 쿠키 삭제
 			if (error instanceof AppException && error.getResponse()['errorCode'] === ErrorCode.REFRESH_TOKEN_EXPIRED) {
+				const isSecure = process.env.SSL_ENABLED === 'true';
+				const cookieDomain = process.env.COOKIE_DOMAIN;
 				// 쿠키 삭제
 				res.clearCookie('refreshToken', {
 					httpOnly: true,
-					secure: false,
+					secure: isSecure,
 					path: '/api/auth/refresh',
-					sameSite: 'strict'
+					sameSite: isSecure ? 'none' : 'strict',
+					...(cookieDomain && { domain: cookieDomain }),
 				});
-				
+
 				// 에러는 그대로 전파하여 클라이언트에게 만료 메시지 전달
 				throw error;
 			}

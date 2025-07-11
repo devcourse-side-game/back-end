@@ -1,0 +1,43 @@
+name: Steam Games Batch Runner
+
+on:
+  # 워크플로우를 수동으로 실행할 수 있도록 workflow_dispatch 추가
+  workflow_dispatch:
+  # 3일에 한 번 자정(UTC 기준)에 워크플로우를 실행
+  schedule:
+    - cron: '0 0 */3 * *'
+
+jobs:
+  run-steam-batch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # 프로젝트에 맞는 Node.js 버전 사용
+
+      - name: Install dependencies
+        run: npm ci # package-lock.json을 사용하여 더 빠르고 일관된 설치
+
+      - name: Create .env file
+        run: |
+          echo "DATABASE_HOST=${{ secrets.DATABASE_HOST }}" >> .env
+          echo "DATABASE_PORT=${{ secrets.DATABASE_PORT }}" >> .env
+          echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> .env
+          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
+          echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" >> .env
+          # Steam API 키도 secret으로 관리해야 합니다.
+          echo "STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}" >> .env
+          # .env.example에 있는 다른 변수들도 필요에 따라 추가합니다.
+          echo "JWT_SECRET=dummy-secret-for-batch" >> .env
+          echo "JWT_EXPIRES_IN=1d" >> .env
+          echo "JWT_ISSUER=batch-runner" >> .env
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run Steam Batch Runner
+        run: node dist/src/games/scripts/steam-batch-runner.js
